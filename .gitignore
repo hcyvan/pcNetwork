@@ -1,2 +1,10 @@
 reports/*
 !reports/README.md
+data/*
+!data/README.md
+.Rproj.user
+cache/*
+!cache/README.md
+
+.Rhistory
+pcNetwork.Rproj
