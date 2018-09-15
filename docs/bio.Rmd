@@ -4,16 +4,22 @@ output: html_notebook
 ---
 ### BioMart Annotation
 
-RNA-seq gene annotation is download from [BioMart](http://www.ensembl.org/biomart/martview/b50484329e8deb4e57a659564604e9f5)  
+RNA-seq gene annotation is download from [BioMart](http://www.ensembl.org/biomart/martview/b50484329e8deb4e57a659564604e9f5)
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-```{r}
-plot(cars)
+```
+Dataset:
+  Human genes (GRCh38.p12)
+Attributes:
+  Gene stable ID
+  Transcript stable ID
+  Gene start (bp)
+  Gene end (bp)
+  Transcript start (bp)
+  Transcript end (bp)
+  Transcription start site (TSS)
+  Gene type
+  GO term accession
+  GO term name
+  HGNC symbol
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
