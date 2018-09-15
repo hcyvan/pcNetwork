@@ -9,7 +9,7 @@ logging: FALSE
 logging_level: INFO
 load_libraries: TRUE
 libraries: dplyr, stringr
-as_factors: TRUE
+as_factors: FALSE
 data_tables: FALSE
 attach_internal_libraries: FALSE
 cache_loaded_data:  TRUE

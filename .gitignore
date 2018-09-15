@@ -8,3 +8,5 @@ cache/*
 
 .Rhistory
 pcNetwork.Rproj
+
+*.nb.html
