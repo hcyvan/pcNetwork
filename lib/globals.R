@@ -7,7 +7,6 @@ add.config(
 add.config(
   apply.override = TRUE,
   bioMart = 'data/mart_export.txt',
-  diffRnaFile = 'reports/diffGenes.csv',
   lncRNA = c('lincRNA',
               'bidirectional_promoter_lncRNA',
               '3prime_overlapping_ncRNA',

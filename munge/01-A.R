@@ -1,11 +1,10 @@
 count.data <- count.data %>% mutate(GeneID=str_split_fixed(GeneID, '\\.', 2)[,1])
 fpkm.data <- fpkm.data %>% mutate(GeneID=str_split_fixed(GeneID, '\\.', 2)[,1])
 
-diffRna <- read.delim(config$diffRnaFile, sep = ',')
-diffRna <- diffRna[,-1]
-diffLncRna <- filter(diffRna, GeneType %in% config$lncRNA)
-diffPcg <- filter(diffRna, GeneType %in% config$PCGs)
-diffLncRnaAndPcg <- filter(diffRna, GeneType %in% c(config$lncRNA, config$PCGs))
+diff.all.106 <- read.delim('./reports/diff.all.106.csv', sep = ',')[,-1]
+diff.lncrna.pcg.106 <- filter(diff.all.106, GeneType %in% c(config$lncRNA, config$PCGs))
+diff.all.551 <- read.delim('./reports/diff.all.551.csv', sep = ',')[,-1]
+diff.lncrna.pcg.551 <- filter(diff.all.551, GeneType %in% c(config$lncRNA, config$PCGs))
 
 bioMart <- distinct(mart.export, Gene.stable.ID, .keep_all = TRUE)
 

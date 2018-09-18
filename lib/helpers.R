@@ -15,17 +15,25 @@ helper.fixSample <- function() {
   samples.paired
 }
 
-helper.getFpkm <- function(sample.fix=FALSE) {
+.getRawData <- function(rawdata, sample.fix=FALSE) {
   sample <- list()
   if (sample.fix) {
-    sample$data <- data.frame(fpkm.data[,1], fpkm.data[,helper.fixSample()])
+    sample$data <- data.frame(rawdata[,1], rawdata[,helper.fixSample()])
     sample$group <- c(rep('T', 54),rep('N', 52))
     sample
   } else {
-    sample$data <- as.data.frame(fpkm.data)
+    sample$data <- as.data.frame(rawdata)
     sample$group <- c(rep('T', 499),rep('N', 52))
     sample
   }
+}
+
+helper.getCount <- function(sample.fix=FALSE) {
+  .getRawData(count.data, sample.fix)  
+}
+
+helper.getFpkm <- function(sample.fix=FALSE) {
+  .getRawData(fpkm.data, sample.fix)
 }
 
 helper.plotGeneCor <- function(a, b, sample.fix=FALSE) {

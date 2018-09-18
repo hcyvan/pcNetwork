@@ -2,11 +2,13 @@ library('ProjectTemplate')
 library(data.table)
 load.project()
 
-genes <- filter(fpkm.data, GeneID %in% diffLncRnaAndPcg[,'GeneID'])
+diff.lncrna.pcg <- diff.lncrna.pcg.106
+data <- helper.getFpkm(T)$data
 
+genes <- filter(data, GeneID%in%diff.lncrna.pcg$GeneID)
 ## Distance
-genes.with.anno <- left_join(diffLncRnaAndPcg, bioMart, by=c('GeneID'='Gene.stable.ID')) %>%
-  select(colnames(diffRna), 
+genes.with.anno <- left_join(diff.lncrna.pcg, bioMart, by=c('GeneID'='Gene.stable.ID')) %>%
+  select(colnames(diff.lncrna.pcg), 
          tss = Transcription.start.site..TSS.,
          geneStart = Transcript.start..bp., 
          geneEnd = Transcript.end..bp., 
@@ -14,34 +16,41 @@ genes.with.anno <- left_join(diffLncRnaAndPcg, bioMart, by=c('GeneID'='Gene.stab
 
 ## Cor pvalue
 ### pvalue
-genes.fpkm <- apply(as.matrix(genes)[,-1],2,as.numeric)
-# i <- 0
-# diff.pvalue <- apply(genes.fpkm,1,function(x){
-#   print(i<<-i+1)
-#   apply(genes.fpkm,1,function(y){
-#     cor.diff.pvalue.pairs(x,y)$p.value
-#   })
-# })
-# save(diff.pvalue, file='cache/diff.pvalue.rda')
-dimnames(diff.pvalue) <- list(genes$GeneID, genes$GeneID)
-diff.pvalue.pairs <- reshape2::melt(diff.pvalue)
-diff.pvalue.pairs <- dplyr::filter(diff.pvalue.pairs,match(Var1,genes$GeneID)<match(Var2,genes$GeneID))
-### Cor
-diff.cor <- cor(t(genes.fpkm))
-dimnames(diff.cor) <- list(genes$GeneID, genes$GeneID)
-diff.cor.pairs <- reshape2::melt(diff.cor)
-diff.cor.pairs <- filter(diff.cor.pairs,match(Var1,genes$GeneID)<match(Var2,genes$GeneID))
-diff.cor.pairs <- left_join(diff.cor.pairs, diff.pvalue.pairs, by=c('Var1'='Var1', 'Var2'='Var2')) %>%
-                  select(Var1, Var2, r=value.x, p.value=value.y)
-### Add dist and significant
-g1 <- genes.with.anno[match(diff.pvalue.pairs$Var1,genes.with.anno$GeneID),]
-g2 <- genes.with.anno[match(diff.pvalue.pairs$Var2,genes.with.anno$GeneID),]
-diff.cor.pairs <- data.table(diff.cor.pairs,
-                             type1=genes.with.anno[match(diff.cor.pairs$Var1, genes.with.anno$GeneID), 'GeneType'],
-                             type2=genes.with.anno[match(diff.cor.pairs$Var2, genes.with.anno$GeneID), 'GeneType'],
-                             dist=ifelse(g1$chromosome==g2$chromosome, g1$tss-g2$tss,Inf),
-                             significant=diff.pvalue.pairs$value<(0.05/nrow(diff.pvalue.pairs)))
+genes.fpkm <- as.matrix(genes[,-1])
 
-save(diff.cor.pairs, file = './cache/diff.cor.pairs.rda')
+cor.test.multi <- function(data) {
+  i <- 0
+  diff.pvalue <- apply(data,1,function(x){
+    print(i<<-i+1)
+    apply(data,1,function(y){
+      cor.test(x,y)$p.value
+    })
+  })
+}
+system.time(diff.pvalue.106 <- cor.test.multi(genes.fpkm))
+save(diff.pvalue.106, file='cache/diff.pvalue.106.rda')
 
+getCorDistTable <- function(pvalue, genes) {
+  message('1. Reshape p-value...')
+  pvalue.pairs <- filter(reshape2::melt(pvalue), match(Var1, genes$GeneID) < match(Var2, genes$GeneID))
+  message('2. Calculate and add cor...')
+  corr <- cor(t(as.matrix(genes[,-1])))
+  rownames(corr) <- dimnames(pvalue)[[1]]
+  colnames(corr) <- dimnames(pvalue)[[2]]
+  corr.pairs <- filter(reshape2::melt(corr), match(Var1, genes$GeneID) < match(Var2, genes$GeneID))
+  corr.pairs <- left_join(corr.pairs, pvalue.pairs, by=c('Var1'='Var1', 'Var2'='Var2')) %>%
+                select(Var1, Var2, r=value.x, p.value=value.y)
+  message('3. Add gene type, distance and significant...')
+  g1 <- genes.with.anno[match(pvalue.pairs$Var1,genes.with.anno$GeneID),]
+  g2 <- genes.with.anno[match(pvalue.pairs$Var2,genes.with.anno$GeneID),]
+  corr.pairs <- data.frame(corr.pairs,
+                           type1=g1$GeneType,
+                           type2=g2$GeneType,
+                           dist=ifelse(g1$chromosome==g2$chromosome, g1$tss-g2$tss,Inf),
+                           significant=pvalue.pairs$value<(0.05/nrow(pvalue.pairs)))
+  corr.pairs
+}
 
+dimnames(diff.pvalue.106) <- list(genes$GeneID, genes$GeneID)
+diff.cor.pairs.106 <- getCorDistTable(diff.pvalue.106, genes)
+save(diff.cor.pairs.106, file = './cache/diff.cor.pairs.106.rda')
