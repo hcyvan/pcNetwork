@@ -20,8 +20,11 @@ getCisGene <- function(pairs, b1, b2=0, significant=TRUE) {
 
 cis.2k.551 <- getCisGene(diff.cor.pairs, 2000) 
 write.csv(cis.2k.551, 'reports/cis.2k.551.csv')
-# cis.2k.106 <- getCisGene(diff.cor.pairs.106, 2000)
-# write.csv(cis.2k.106, 'reports/cis.2k.106.csv')
+cis.63k.127k <- getCisGene(diff.cor.pairs, 127000, 63000)
+write.csv(cis.63k.127k, file = 'reports/cis.63k.127k.csv')
+cis.65535k.131071k <- getCisGene(diff.cor.pairs, 131071000, 65535000)
+write.csv(cis.65535k.131071k, file = 'reports/cis.65535k.131071k.csv')
+
 
 ## --------------------------------------------- True Ratio -------------------------------------------
 calculateSigRatio <- function(bound) {
@@ -41,3 +44,6 @@ a <- 2^seq(0,18)*1000 -1000
 b <- 2^seq(1,19)*1000 -1000
 cor.ratio.by.dist <- t(apply(cbind(a,b), 1, calculateSigRatio))
 colnames(cor.ratio.by.dist) <- c('from', 'to', 'true', 'false', 'true.ratio')
+
+# ============================
+write.csv(getCisGene(diff.cor.pairs, Inf,0), file = './reports/diff.cor.pairs.csv')
