@@ -2,8 +2,8 @@ library('ProjectTemplate')
 library(data.table)
 load.project()
 
-diff.lncrna.pcg <- diff.lncrna.pcg.106
-data <- helper.getFpkm(T)$data
+diff.lncrna.pcg <- diff.lncrna.pcg.551
+data <- helper.getFpkm()$data
 
 genes <- filter(data, GeneID%in%diff.lncrna.pcg$GeneID)
 ## Distance
@@ -27,8 +27,8 @@ cor.test.multi <- function(data) {
     })
   })
 }
-system.time(diff.pvalue.106 <- cor.test.multi(genes.fpkm))
-save(diff.pvalue.106, file='cache/diff.pvalue.106.rda')
+#system.time(diff.pvalue.106 <- cor.test.multi(genes.fpkm))
+#save(diff.pvalue.106, file='cache/diff.pvalue.106.rda')
 
 getCorDistTable <- function(pvalue, genes) {
   message('1. Reshape p-value...')
@@ -51,6 +51,6 @@ getCorDistTable <- function(pvalue, genes) {
   corr.pairs
 }
 
-dimnames(diff.pvalue.106) <- list(genes$GeneID, genes$GeneID)
-diff.cor.pairs.106 <- getCorDistTable(diff.pvalue.106, genes)
-save(diff.cor.pairs.106, file = './cache/diff.cor.pairs.106.rda')
+dimnames(diff.pvalue) <- list(genes$GeneID, genes$GeneID)
+diff.cor.pairs <- getCorDistTable(diff.pvalue, genes)
+save(diff.cor.pairs, file = './cache/diff.cor.pairs.rda')
