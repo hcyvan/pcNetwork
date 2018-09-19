@@ -36,11 +36,32 @@ helper.getFpkm <- function(sample.fix=FALSE) {
   .getRawData(fpkm.data, sample.fix)
 }
 
+.getAB <- function(a, b, sample) {
+  .findGene <- function(id, sample.data) {
+    gene <- filter(sample.data, GeneID==id)
+    if (is.na(gene$GeneID[1])) {
+      mart.export %>% filter(HGNC.symbol==id) -> tmp
+      id.new <- tmp$Gene.stable.ID[1]
+      gene <- filter(sample.data, GeneID==id.new)
+    }
+    if (is.na(gene$GeneID[1])) {
+      stop('Can parse Gene ID: ', id)
+    }
+    as.numeric(as.matrix(gene[,-1]))
+  }
+  a.gene <- .findGene(a, sample)
+  b.gene <- .findGene(b, sample)
+  data.frame(a=a.gene, b=b.gene)
+}
+a <- 'ENSG00000268388'
+b <- 'FENDRR'
+c <- .getAB(a,b,fpkm.data)
+
 helper.plotGeneCor <- function(a, b, sample.fix=FALSE) {
   sample <- helper.getFpkm(sample.fix = sample.fix)
-  a.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==a)[,-1]))
-  b.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==b)[,-1]))
-  dat <- data.frame(a=a.fpkm, b=b.fpkm, g=sample$group)
+  ab <- .getAB(a, b, sample$data)
+  
+  dat <- data.frame(a=ab$a, b=ab$b, g=sample$group)
   dat.lm <- lm(b~a, data=dat)
   p <- ggplot(dat, aes(x = a, y = b, colour = g)) + geom_point()
   p + geom_abline(intercept = coef(dat.lm)[1],slope = coef(dat.lm)[2])
@@ -48,28 +69,28 @@ helper.plotGeneCor <- function(a, b, sample.fix=FALSE) {
 
 helper.plotGeneBox <- function(a, b, sample.fix=FALSE) {
   sample <- helper.getFpkm(sample.fix = sample.fix)
-  a.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==a)[,-1]))
-  b.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==b)[,-1]))
-  dat.a <- data.frame(gene=a, group=sample$group, fpkm=a.fpkm)
-  dat.b <- data.frame(gene=b, group=sample$group, fpkm=b.fpkm)
+  ab <- .getAB(a, b, sample$data)
+  
+  dat.a <- data.frame(gene=a, group=sample$group, fpkm=ab$a)
+  dat.b <- data.frame(gene=b, group=sample$group, fpkm=ab$b)
   dat <- rbind(dat.a, dat.b)
   ggplot(dat, aes(x=gene, y=fpkm, fill=group)) + geom_boxplot()
 }
 
 helper.plotGenePointAndBox <- function(a, b, sample.fix=FALSE) {
   sample <- helper.getFpkm(sample.fix = sample.fix)
-  a.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==a)[,-1]))
-  b.fpkm <- as.numeric(as.matrix(filter(sample$data, GeneID==b)[,-1]))
+  ab <- .getAB(a, b, sample$data)
   
-  dat1 <- data.frame(a=a.fpkm, b=b.fpkm, g=sample$group)
+  dat1 <- data.frame(a=ab$a, b=ab$b, g=sample$group)
   dat1.lm <- lm(b~a, data=dat1)
   p1 <- ggplot(dat1, aes(x = a, y = b, colour = g)) + geom_point() + labs(x=a,y=b)
   p1 <- p1 + theme(axis.title.x =element_text(size=10), axis.title.y=element_text(size=10))
   p1 <- p1 + geom_abline(intercept = coef(dat1.lm)[1],slope = coef(dat1.lm)[2])
 
-  dat.a <- data.frame(gene=a, group=sample$group, fpkm=a.fpkm)
-  dat.b <- data.frame(gene=b, group=sample$group, fpkm=b.fpkm)
+  dat.a <- data.frame(gene=a, group=sample$group, fpkm=ab$a)
+  dat.b <- data.frame(gene=b, group=sample$group, fpkm=ab$b)
   dat <- rbind(dat.a, dat.b)
   p2 <- ggplot(dat, aes(x=gene, y=fpkm, fill=group)) + geom_boxplot()
   .multiplot(p1,p2, cols = 2)
 }
+

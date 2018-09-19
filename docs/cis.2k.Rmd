@@ -1,0 +1,84 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+### FENDRR vs. FOXF1
+```{r}
+helper.plotGenePointAndBox('FENDRR', 'FOXF1')
+```
+
+
+#### Ref
+##### The value of lncRNA FENDRR and FOXF1 as a prognostic factor for survival of lung adenocarcinoma
+  + positive corelation
+  + DNA:DNA-RNA
+
+##### A Mechanistic Study of lncRNA Fendrr Regulation of FoxF1 Lung Cancer Tumor Supressor
+  + negative correlation 
+  + Grote and Herrmann indicated that Fendrr interacts with PRC2 complex that inhibit expression of FoxF1
+
+
+
+
+
+
+### ENSG00000254531 vs. PPP3CA
+```{r}
+helper.plotGenePointAndBox('ENSG00000254531', 'PPP3CA')
+```
+
+
+
+### ID2-AS1	vs. ID2
+```{r}
+helper.plotGenePointAndBox('ID2-AS1', 'ID2')
+```
+
+
+### UBXN10-AS1 vs. UBXN10
+```{r}
+helper.plotGenePointAndBox('UBXN10-AS1', 'UBXN10')
+```
+
+
+### ENSG00000259793 vs. DGKD
++ Promoter
+```{r}
+helper.plotGenePointAndBox('ENSG00000259793', 'DGKD')
+```
+
+### ENSG00000255224 vs. EXOSC4
+```{r}
+helper.plotGenePointAndBox('ENSG00000255224', 'EXOSC4')
+```
+
+
+### RHPN1-AS1 vs. RHPN1
+```{r}
+helper.plotGenePointAndBox('RHPN1-AS1', 'RHPN1')
+```
+
+
+### PTOV1-AS2	vs. PNKP
+```{r}
+helper.plotGenePointAndBox('PTOV1-AS2', 'PNKP')
+```
+
+```{r}
+helper.plotGenePointAndBox('PTOV1-AS2', 'PTOV1')
+```
+
+```{r}
+helper.plotGenePointAndBox('PTOV1', 'PNKP')
+```
+
+
+### TIPARP-AS1 vs. TIPARP
+```{r}
+helper.plotGenePointAndBox('TIPARP-AS1', 'TIPARP')
+```
+#### Ref
+##### The aryl hydrocarbon receptor regulates the expression of TIPARP and its cis long non-coding RNA, TIPARP-AS1
++ Here we show that activated AHR is recruited to the TIPARP promoter, through its binding to two genomic regions that each contain multiple AHR response elements (AHREs), AHR regulates the expression of both TIPARP but also TIPARP-AS1, a long non-coding RNA (lncRNA) which lies upstream of TIPARP exon 1 and is expressed in the opposite orientation. 
++ same regulate pattern
+
