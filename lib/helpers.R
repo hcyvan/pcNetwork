@@ -53,9 +53,6 @@ helper.getFpkm <- function(sample.fix=FALSE) {
   b.gene <- .findGene(b, sample)
   data.frame(a=a.gene, b=b.gene)
 }
-a <- 'ENSG00000268388'
-b <- 'FENDRR'
-c <- .getAB(a,b,fpkm.data)
 
 helper.plotGeneCor <- function(a, b, sample.fix=FALSE) {
   sample <- helper.getFpkm(sample.fix = sample.fix)

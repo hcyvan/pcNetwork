@@ -10,3 +10,4 @@ cache/*
 pcNetwork.Rproj
 
 *.nb.html
+*.rda
