@@ -1,4 +1,30 @@
+library(stringr)
+library(dplyr)
 source('./lib/lib.R')
+
+helper.get.data.count <- function() {
+  data.count <- read.delim('./data/data.count.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
+  rownames(data.count) <- str_split_fixed(rownames(data.count), '\\.',2)[,1]
+  data.count
+}
+
+helper.get.fpkm.count <- function() {
+  data.fpkm <- read.delim('./data/data.fpkm.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
+  rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
+  data.fpkm
+}
+
+helper.get.biomart <- function() {
+  biomart <- read.delim('./data/mart_export.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+  biomart <- distinct(biomart, Gene.stable.ID, .keep_all = TRUE)
+  biomart
+}
+
+helper.get.lncRNA.PCG <- function() {
+  lncRNA <- read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
+  pcg <- read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
+  rbind(lncRNA, pcg)
+}
 
 helper.getGeneSymbol <- function(gene.id) {
   as.data.frame(bioMart)[match(gene.id, bioMart$Gene.stable.ID), 'HGNC.symbol']
