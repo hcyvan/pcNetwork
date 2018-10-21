@@ -1,14 +1,13 @@
-library('ProjectTemplate')
-library(data.table)
-load.project()
+source('./lib/globals.R')
+source('./lib/helpers.R')
 
-diff.lncrna.pcg <- diff.lncrna.pcg.551
-data <- helper.getFpkm()$data
+diff.gene <- helper.get.lncRNA.PCG()
+data.fpkm <- helper.get.fpkm.count()
+biomart <- helper.get.biomart()
 
-genes <- filter(data, GeneID%in%diff.lncrna.pcg$GeneID)
-## Distance
-genes.with.anno <- left_join(diff.lncrna.pcg, bioMart, by=c('GeneID'='Gene.stable.ID')) %>%
-  select(colnames(diff.lncrna.pcg), 
+genes.fpkm <- data.fpkm[rownames(data.fpkm)%in%diff.gene$GeneID,]
+genes.anno <- left_join(diff.gene, biomart, by=c('GeneID'='Gene.stable.ID')) %>%
+  select(colnames(diff.gene), 
          tss = Transcription.start.site..TSS.,
          geneStart = Transcript.start..bp., 
          geneEnd = Transcript.end..bp., 
@@ -16,9 +15,8 @@ genes.with.anno <- left_join(diff.lncrna.pcg, bioMart, by=c('GeneID'='Gene.stabl
 
 ## Cor pvalue
 ### pvalue
-genes.fpkm <- as.matrix(genes[,-1])
-
 cor.test.multi <- function(data) {
+  data <- as.matrix(data)
   i <- 0
   diff.pvalue <- apply(data,1,function(x){
     print(i<<-i+1)
@@ -27,22 +25,24 @@ cor.test.multi <- function(data) {
     })
   })
 }
-#system.time(diff.pvalue.106 <- cor.test.multi(genes.fpkm))
-#save(diff.pvalue.106, file='cache/diff.pvalue.106.rda')
+load(cor.pvalue)
+# system.time(cor.pvalue <- cor.test.multi(genes.fpkm))
+# save(cor.pvalue, file='cache/diff.qlf.2877.cor.pvalue.rda')
 
-getCorDistTable <- function(pvalue, genes) {
+getCorDistTable <- function(genes, anno, pvalue) {
+  dimnames(pvalue) <- list(anno$GeneID, anno$GeneID)
   message('1. Reshape p-value...')
-  pvalue.pairs <- filter(reshape2::melt(pvalue), match(Var1, genes$GeneID) < match(Var2, genes$GeneID))
+  pvalue.pairs <- filter(reshape2::melt(pvalue), match(Var1, anno$GeneID) < match(Var2, anno$GeneID))
   message('2. Calculate and add cor...')
-  corr <- cor(t(as.matrix(genes[,-1])))
+  corr <- cor(t(as.matrix(genes)))
   rownames(corr) <- dimnames(pvalue)[[1]]
   colnames(corr) <- dimnames(pvalue)[[2]]
-  corr.pairs <- filter(reshape2::melt(corr), match(Var1, genes$GeneID) < match(Var2, genes$GeneID))
+  corr.pairs <- filter(reshape2::melt(corr), match(Var1, anno$GeneID) < match(Var2, anno$GeneID))
   corr.pairs <- left_join(corr.pairs, pvalue.pairs, by=c('Var1'='Var1', 'Var2'='Var2')) %>%
                 select(Var1, Var2, r=value.x, p.value=value.y)
   message('3. Add gene type, distance and significant...')
-  g1 <- genes.with.anno[match(pvalue.pairs$Var1,genes.with.anno$GeneID),]
-  g2 <- genes.with.anno[match(pvalue.pairs$Var2,genes.with.anno$GeneID),]
+  g1 <- anno[match(pvalue.pairs$Var1, anno$GeneID),]
+  g2 <- anno[match(pvalue.pairs$Var2, anno$GeneID),]
   corr.pairs <- data.frame(corr.pairs,
                            type1=g1$GeneType,
                            type2=g2$GeneType,
@@ -51,6 +51,5 @@ getCorDistTable <- function(pvalue, genes) {
   corr.pairs
 }
 
-dimnames(diff.pvalue) <- list(genes$GeneID, genes$GeneID)
-diff.cor.pairs <- getCorDistTable(diff.pvalue, genes)
+diff.cor.pairs <- getCorDistTable(genes.fpkm, genes.anno, cor.pvalue)
 save(diff.cor.pairs, file = './cache/diff.cor.pairs.rda')

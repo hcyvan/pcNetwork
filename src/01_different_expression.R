@@ -3,6 +3,7 @@ library(stringr)
 library(dplyr)
 
 source('./lib/globals.R')
+source('./lib/helpers.R')
 
 getDE <- function(def, lfc=1, p.value=0.05) {
   is.de <- decideTestsDGE(def, lfc=lfc, p.value = p.value)
@@ -11,13 +12,9 @@ getDE <- function(def, lfc=1, p.value=0.05) {
   cbind(de.genes, de)
 }
 
-data.count <- read.delim('./data/data.count.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
-rownames(data.count) <- str_split_fixed(rownames(data.count), '\\.',2)[,1]
-biomart <- read.delim('./data/mart_export.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
-mart.export <- distinct(mart.export, Gene.stable.ID, .keep_all = TRUE)
+data.count <- helper.get.data.count()
+biomart <- helper.get.biomart()
 data.sample <- read.delim('./data/data.sample.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
-
-tissue <- factor(data.sample$sample.type)
 
 counts <- data.count
 group <- data.sample$sample.type
@@ -36,6 +33,7 @@ y <- y[keep, keep.lib.sizes=FALSE]
 system.time(y <- calcNormFactors(y))
 
 ## estimate Disp
+tissue <- factor(data.sample$sample.type)
 design <- model.matrix(~tissue)
 system.time(y <- estimateDisp(y, design, robust=TRUE))
 
