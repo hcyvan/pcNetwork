@@ -25,7 +25,7 @@ cor.test.multi <- function(data) {
     })
   })
 }
-load(cor.pvalue)
+load('./cache/diff.qlf.2877.cor.pvalue.rda')
 # system.time(cor.pvalue <- cor.test.multi(genes.fpkm))
 # save(cor.pvalue, file='cache/diff.qlf.2877.cor.pvalue.rda')
 
@@ -52,4 +52,4 @@ getCorDistTable <- function(genes, anno, pvalue) {
 }
 
 diff.cor.pairs <- getCorDistTable(genes.fpkm, genes.anno, cor.pvalue)
-save(diff.cor.pairs, file = './cache/diff.cor.pairs.rda')
+save(diff.cor.pairs, file = './cache/diff.qlf.2877.pairs.rda')

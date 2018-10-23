@@ -1,6 +1,3 @@
-library(ProjectTemplate)
-load.project()
-
 load('cache/diff.cor.pairs.rda')
 # load('cache/diff.cor.pairs.106.rda')
 
