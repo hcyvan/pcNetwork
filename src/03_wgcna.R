@@ -7,7 +7,7 @@ diff.gene <- helper.get.lncRNA.PCG()
 data.fpkm <- helper.get.fpkm.count()
 biomart <- helper.get.biomart()
 
-genes.fpkm <- data.fpkm[rownames(data.fpkm)%in%diff.gene$GeneID,]
+genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
 datExpr <- t(as.matrix(genes.fpkm))
 
 # ----------------------------- WGCNA -------------------------------------
@@ -83,7 +83,7 @@ dev.off()
 ## ----    Module Eigengene relationship / Eigengene Networks ---------
 MEs <- moduleEigengenes(datExpr,
                         moduleColors,
-                        softPower = 12)$eigengenes
+                        softPower = sft$powerEstimate)$eigengenes
 MEs <- orderMEs(MEs)
 tiff(paste0(resultPath, 'ModuleRelationship.tiff'), width = 862, height = 571)
 plotEigengeneNetworks(MEs, "Eigengene adjacency heatmap", 
@@ -92,6 +92,17 @@ plotEigengeneNetworks(MEs, "Eigengene adjacency heatmap",
                       xLabelsAngle = 90)
 dev.off()
 
+## ---- gene VS. module -------
+MGs <- list()
+MGs.col <- data.frame()
+for(c in unique(moduleColors)){
+  print(c)
+  datExpr_c = datExpr[,moduleColors==c]
+  cor_c <- cor(datExpr_c, MEs[[paste0('ME',c)]])
+  colnames(cor_c) <- 'cor'
+  MGs[[c]] <- cor_c
+  MGs.col <- rbind(MGs.col, data.frame(mg.cor=cor_c[,1]))
+}
 ## --------------------------- Export result -------------------------
 summaryTable <- function(data) {
   data <- as.data.frame.matrix(data)
@@ -101,10 +112,13 @@ summaryTable <- function(data) {
 }
 
 gene.module <- data.frame(diff.gene, moduleColor=moduleColors)
+gene.module <- data.frame(gene.module, mg.cor=MGs.col$mg.cor[match(gene.module$GeneID, rownames(MGs.col))])
 gene.module.summary <- summaryTable(table(gene.module[c('moduleColor', 'GeneType')]))
 write.csv(gene.module, file = paste0(resultPath, 'geneModule.csv'))
 write.csv(gene.module.summary , file=paste0(resultPath, 'geneModuleTable.csv'))
-write.csv(select(gene.module, id=GeneID, type=GeneType,color=moduleColor), file ='./data/diff.qlf.2877.wgcna.color.csv')
+write.csv(data.frame(id=gene.module$GeneID, type=gene.module$GeneType,color=gene.module$moduleColor, mg.cor=gene.module$mg.cor),
+          row.names = FALSE,
+          file ='./data/diff.qlf.2877.wgcna.color.csv')
 
 
 ################################ step by step #####################################
