@@ -20,10 +20,15 @@ bg3 <- distinct(bg3)
 barplot(sort(table(bg$tf)))
 barplot(sort(table(bg$symbol)))
 
-
+dim(bg1)
+dim(bg2)
+dim(bg3)
+unique(bg1$tf)
+unique(bg2$tf)
+intersect(bg1$tf, bg2$tf)
 ## ------------------------------- over-representation analysis ----------------------------------
 ### ---------------- for each color
-colorEnricher <- function(c, bg, pvalueCutoff=0.05) {
+colorEnricher <- function(c, bg, pvalueCutoff) {
   tf2gene <- bg[,c('tf','symbol')]
   m.c <- dplyr::filter(modules, color==c, type%in%config$PCGs)
   geneList <- bitr(m.c$id, fromType='ENSEMBL',toType=c('ENTREZID', 'SYMBOL'), OrgDb = org.Hs.eg.db)
@@ -32,32 +37,57 @@ colorEnricher <- function(c, bg, pvalueCutoff=0.05) {
   x
 }
 
-colorEnricherEach <- function(bg) {
+colorEnricherEach <- function(bg, pvalueCutoff=0.05) {
   enrichers <- list(detail=list(), tfs=list())
   for(c in unique(modules$color)){
     print(c)
-    result <- colorEnricher(c,bg=bg)
+    result <- colorEnricher(c,bg=bg, pvalueCutoff = pvalueCutoff)
     enrichers$tfs[[c]] <- as.data.frame(result)$ID
     enrichers$detail[[c]] <- result
   }
   enrichers
 }
 
+enricher.bg1.001 <- colorEnricherEach(bg1,0.01)
+enricher.bg2.001 <- colorEnricherEach(bg2,0.01)
+enricher.bg3.001 <- colorEnricherEach(bg3,0.01)
+
 enricher.bg1 <- colorEnricherEach(bg1)
 enricher.bg2 <- colorEnricherEach(bg2)
 enricher.bg3 <- colorEnricherEach(bg3)
-
 ### ---------------------for all
-colorEnricherAll <- function(bg) {
+colorEnricherAll <- function(bg, pvalueCutoff=0.05) {
   tf2gene <- bg[,c('tf','symbol')]
   m.c <- dplyr::filter(modules, type%in%config$PCGs)
   geneList <- bitr(m.c$id, fromType='ENSEMBL',toType=c('ENTREZID', 'SYMBOL'), OrgDb = org.Hs.eg.db)
-  enricher.all <- enricher(geneList$SYMBOL, TERM2GENE = tf2gene, pvalueCutoff = 0.05, minGSSize=NULL, maxGSSize=NULL)
+  enricher.all <- enricher(geneList$SYMBOL, TERM2GENE = tf2gene, pvalueCutoff = pvalueCutoff, minGSSize=NULL, maxGSSize=NULL)
   list(detail=enricher.all, tfs=as.data.frame(enricher.all)$ID)
 }
+enricher.all.bg1.001 <- colorEnricherAll(bg1,0.01)
+enricher.all.bg2.001 <- colorEnricherAll(bg2,0.01)
+enricher.all.bg3.001 <- colorEnricherAll(bg3,0.01)
+
 enricher.all.bg1 <- colorEnricherAll(bg1)
 enricher.all.bg2 <- colorEnricherAll(bg2)
 enricher.all.bg3 <- colorEnricherAll(bg3)
+
+### -------- export
+as.data.frame(enricher.bg3.001$detail$brown)
+
+total <- c()
+colors <- unique(modules$color)
+for(c in colors){
+  print(c)
+  result <- as.data.frame(enricher.bg3.001$detail[[c]])
+  total <- c(total, nrow(result))
+  write.csv(result, row.names = FALSE, file = paste0('./reports/tf_enricher/',c,'.csv'))
+}
+write.csv(as.data.frame(enricher.all.bg3.001$detail), row.names = FALSE, file = paste0('./reports/tf_enricher/all.csv'))
+
+
+tf.n <- data.frame(module=colors, n=total)
+modules.table <- read.delim('./reports/wgcna/geneModuleTable.csv', sep = ',')
+write.csv(data.frame(modules.table, tf=tf.n[match(modules.table$X, tf.n$module),2]), file = './reports/tf_enricher/module_tf_num.csv', row.names = FALSE)
 
 
 ## ------------------------------- GSEA -----------------------------------------
