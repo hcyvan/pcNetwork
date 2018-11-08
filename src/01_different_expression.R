@@ -31,18 +31,15 @@ keep <- rowSums(cpm(counts) > 0.5) >= ncol(counts)/10
 y <- y[keep, keep.lib.sizes=FALSE]
 ## normalization
 system.time(y <- calcNormFactors(y))
-
+## ------------- quasi-likelihood -----------------------------
 ## estimate Disp
 tissue <- factor(data.sample$sample.type)
 design <- model.matrix(~tissue)
 system.time(y <- estimateDisp(y, design, robust=TRUE))
-
 ## get GLM model
 system.time(fit <- glmQLFit(y, design, robust=TRUE))
-
 ## test
 system.time(qlf <- glmQLFTest(fit))
-
 lfc <- log2(2)
 p.value <- 0.05
 
