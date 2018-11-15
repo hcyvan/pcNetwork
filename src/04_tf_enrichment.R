@@ -9,7 +9,8 @@ pcg <- diff.gene %>% filter(GeneType%in%config$PCGs) %>% dplyr::select(id=GeneID
 
 
 # modules <- read.delim('./data/diff.qlf.2877.wgcna.color.csv', sep = ',',header = TRUE, stringsAsFactors = FALSE)
-
+######################################################## backgroud
+#------------------------------------------------------- bg from enrichr
 bg1 <- read.delim('./data/enricher/ENCODE_TF_ChIP-seq_2015.handle.txt', sep = ',',header = TRUE, stringsAsFactors = FALSE)
 bg2 <- read.delim('./data/enricher/ChEA_2016.handle.txt', sep = '\t',header = TRUE, stringsAsFactors = FALSE)
 bg3 <- read.delim('./data/enricher/TRANSFAC_and_JASPAR_PWMs.handle.txt', sep = '\t',header = TRUE, stringsAsFactors = FALSE)
@@ -34,32 +35,31 @@ length(unique(bg0$tf))
 
 barplot(sort(table(bg0$tf)))
 barplot(sort(table(bg0$symbol)))
-
+#------------------------------------------------------- bg from Jaspar + FIMO
+bg.j <- read.delim('./data/enricher/fimo.tsv', sep = '\t',header = TRUE, stringsAsFactors = FALSE)
+bg.jasper <- dplyr::select(bg.j, tf=motif_alt_id, ensembl=sequence_name)
 # ---------------------------------------------- filter bg
-library(biomaRt)
-listMarts()
-ensembl=useMart("ENSEMBL_MART_ENSEMBL")
-listDatasets(ensembl)
-ensembl = useDataset("hsapiens_gene_ensembl",mart=ensembl)
-ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
-filters = listFilters(ensembl)
-attributes = listAttributes(ensembl)
-searchAttributes(mart = ensembl, pattern = "ensembl")
-biomart.symbol.biotype = getBM(attributes = c('ensembl_gene_id','hgnc_symbol', 'gene_biotype'), mart = ensembl)
-save(biomart.symbol.biotype, file = './cache/biomart.symbol.biotype.rda')
+load('./cache/biomart.symbol.biotype.rda')
 filter(biomart.symbol.biotype, gene_biotype%in%config$PCGs) -> biomart.pcgs
 
 bg0.new <- filter(bg0, symbol%in%biomart.pcgs$hgnc_symbol)
 bg1.new <- filter(bg1, symbol%in%biomart.pcgs$hgnc_symbol)
 bg2.new <- filter(bg2, symbol%in%biomart.pcgs$hgnc_symbol)
 bg3.new <- filter(bg3, symbol%in%biomart.pcgs$hgnc_symbol)
+bgj.new <- left_join(bg.jasper, biomart.pcgs, by=c('ensembl'='ensembl_gene_id'))%>%filter(gene_biotype%in%config$PCGs)%>%dplyr::select(tf=tf, symbol=ensembl)
+bgj.new2 <- left_join(bg.jasper, biomart.pcgs, by=c('ensembl'='ensembl_gene_id'))%>%dplyr::select(tf=tf, symbol=ensembl)
+
+barplot(sort(table(bgj.new$tf)))
+barplot(sort(table(bgj.new$symbol)))
 
 # -------------------------------------------
 
 ###################################################### Diff Gene Enricher
-colorEnricherAll <- function(bg, pvalueCutoff=0.05) {
+colorEnricherAll <- function(bg, pvalueCutoff=0.05, geneList=NULL) {
   tf2gene <- bg[,c('tf','symbol')]
-  geneList <- inner_join(pcg, biomart.pcgs, by=c('id'='ensembl_gene_id'))$hgnc_symbol
+  if (is.null(geneList)) {
+    geneList <- inner_join(pcg, biomart.pcgs, by=c('id'='ensembl_gene_id'))$hgnc_symbol
+  }
   enricher.all <- enricher(geneList, TERM2GENE = tf2gene, pvalueCutoff = pvalueCutoff, minGSSize=NULL, maxGSSize=NULL)
   list(detail=enricher.all, tfs=as.data.frame(enricher.all)$ID)
 }
@@ -75,9 +75,14 @@ enricher.all.bg2 <- colorEnricherAll(bg2)
 enricher.all.bg3 <- colorEnricherAll(bg3)
 enricher.all.bg0 <- colorEnricherAll(bg0)
 enricher.all.bg0.new <- colorEnricherAll(bg0.new) ### Use this
-
 write.csv(enricher.all.bg0.new, file = './data/enricher.all.bg0.new.csv', row.names = FALSE)
 
+
+geneList <- inner_join(pcg, biomart.pcgs, by=c('id'='ensembl_gene_id'))$id
+enricher.all.bgj.new <- colorEnricherAll(bgj.new, geneList = geneList, pvalueCutoff = 0.05)
+
+filter(biomart.symbol.biotype, ensembl_gene_id%in%lncRNA.pcg)$hgnc_symbol -> geneList
+enricher.all.bgj.new <- colorEnricherAll(bg0.new, geneList = geneList, pvalueCutoff = 0.01)
 ####################################################### WGCNA Moudle
 ## ------------------------------- over-representation analysis ----------------------------------
 ### ---------------- for each color
