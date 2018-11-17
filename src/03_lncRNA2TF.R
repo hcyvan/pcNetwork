@@ -11,16 +11,40 @@ get.lncRNA.2.PCG <- function(s=0) {
   lncRNA.2.PCG
 }
 
+lncRNA.2.PCG.plot <- function(s) {
+  sapply(get.lncRNA.2.PCG(s), function(x){length(x)})%>%sort->tmp
+  tmp%>%barplot(main=s)
+  summary(tmp)
+}
+# par(mfrow=c(3,3))
+# lncRNA.2.PCG.plot(0.1)
+# lncRNA.2.PCG.plot(0.2)
+# lncRNA.2.PCG.plot(0.3)
+# lncRNA.2.PCG.plot(0.4)
+# lncRNA.2.PCG.plot(0.5)
+# lncRNA.2.PCG.plot(0.6)
+# lncRNA.2.PCG.plot(0.7)
+# lncRNA.2.PCG.plot(0.8)
+# lncRNA.2.PCG.plot(0.9)
+
 ################################################# tf-pcg
-tf.enricher <- read.delim('./data/enricher.all.bg0.new.csv', sep = ',', stringsAsFactors = F)
-tf.enricher.list <- setNames(split(tf.enricher, seq(nrow(tf.enricher))), tf.enricher$detail.ID)
+get.tf.2.PCG.from.enricher <- function() {
+  tf.enricher <- read.delim('./data/enricher.all.bg0.new.csv', sep = ',', stringsAsFactors = F)
+  tf.enricher.list <- setNames(split(tf.enricher, seq(nrow(tf.enricher))), tf.enricher$detail.ID)
+  
+  load('./cache/biomart.symbol.biotype.rda')
+  
+  lapply(tf.enricher.list, function(tf){
+    symbol <- str_split(tf$detail.geneID, '/')[[1]]
+    filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
+  })
+}
 
-load('./cache/biomart.symbol.biotype.rda')
-
-lapply(tf.enricher.list, function(tf){
-  symbol <- str_split(tf$detail.geneID, '/')[[1]]
-  filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
-}) -> tf.2.PCG
+get.tf.2.PCG.from.fimo <- function() {
+  fimo <- read.delim('./data/enricher/fimo.460.2230.tsv', stringsAsFactors = F)
+  fimo <- filter(fimo, motif_alt_id!='')
+  lapply(split(fimo,as.vector(fimo$motif_alt_id)), function(x){unique(as.vector(x$sequence_name))})
+}
 
 ############################################################# map to matrix
 
@@ -121,17 +145,17 @@ lncTF <- function(lncRNA.2.PCG.mf, tf.2.PCG.mf) {
   #   "fdr", "none")
   lncRNA.tf.list <- reshape2::melt(lncRNA.tf.phi)
   colnames(lncRNA.tf.list) <- c('lncRNA', 'tf', 'phi')
-  lncRNA.tf.list <- data.frame(reshape2::melt(lncRNA.tf.phi),
+  lncRNA.tf.list <- data.frame(lncRNA.tf.list,
                                p.value=reshape2::melt(lncRNA.tf.phi.p)$value,
-                               p.adjust=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value),
-                               p.holm=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'holm'),
-                               p.hochberg=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hochberg'),
-                               p.hommel=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hommel'),
-                               p.bonferroni=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'bonferroni'),
-                               p.BH=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BH'),
-                               p.BY=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BY'),
-                               p.fdr=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'fdr'),
-                               p.none=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'none'),
+                               # p.adjust=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value),
+                               # p.holm=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'holm'),
+                               # p.hochberg=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hochberg'),
+                               # p.hommel=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hommel'),
+                               # p.bonferroni=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'bonferroni'),
+                               p.adjust=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BH'),
+                               # p.BY=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BY'),
+                               # p.fdr=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'fdr'),
+                               # p.none=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'none'),
                                '11'=reshape2::melt(lncRNA.tf.11)$value,
                                '10'=reshape2::melt(lncRNA.tf.10)$value,
                                '1'=reshape2::melt(lncRNA.tf.1)$value,
@@ -145,7 +169,12 @@ lncTF <- function(lncRNA.2.PCG.mf, tf.2.PCG.mf) {
 
 #################################################
 
-lncTF.all <- function(s=0) {
+lncTF.all <- function(s=0, tf='enricher') {
+  if (tf=='enricher') {
+    tf.2.PCG <- get.tf.2.PCG.from.enricher()
+  } else {
+    tf.2.PCG <- get.tf.2.PCG.from.fimo()
+  }
   lncRNA.2.PCG <- get.lncRNA.2.PCG(s)
   lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
   tf.2.PCG.m <- relation.matrix(tf.2.PCG)
@@ -154,70 +183,27 @@ lncTF.all <- function(s=0) {
   print(ncol(fix$tf))
   lncRNA.tf.list <- lncTF(fix$lncRNA, fix$tf)
   lncRNA.tf.list <- arrange(lncRNA.tf.list, p.value)
-  write.csv(lncRNA.tf.list, file = paste0('./data/lncRNA.tf.list/lncRNA.tf.list.',s,'.csv'))
+  write.csv(lncRNA.tf.list, file = paste0('./data/lncRNA.tf.list/lncRNA.tf.',tf,'.',s,'.csv'))
   lncRNA.tf.list
 }
 
-lncTf.0.9 <- lncTF.all(0.9)
-lncTf.0.8 <- lncTF.all(0.8)
-lncTf.0.7 <- lncTF.all(0.7)
-lncTf.0.6 <- lncTF.all(0.6)
-lncTf.0.5 <- lncTF.all(0.5)
-lncTf.0.4 <- lncTF.all(0.4)
-lncTf.0.3 <- lncTF.all(0.3)
-lncTf.0.2 <- lncTF.all(0.2)
-lncTf.0.1 <- lncTF.all(0.1)
-
-
-
-
-
-lncRNA.2.PCG <- get.lncRNA.2.PCG(0.9)
-lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
-tf.2.PCG.m <- relation.matrix(tf.2.PCG)
-fix <- fix.matrix(lncRNA.2.PCG.m, tf.2.PCG.m)
-a<- 'ENSG00000230699'
-b<- 'DROSHA'
-ls <- fix$lncRNA[,a]
-ts <- fix$tf[,b]
-cor(ls,ts)
-xtab_statistics(data.frame(l=ls, t=ts),x1=l,x2=t, statistics = 'pearson') -> a
-xtab_statistics(data.frame(l=ls, t=ts),x1=l,x2=t, statistics = 'phi') -> a
-xtab_statistics(data.frame(l=ls, t=ts),x1=l,x2=t, statistics = 'cramer')-> a
-xtab_statistics(data.frame(l=ls, t=ts),x1=l,x2=t, statistics = 'kendall') -> a
-xtab_statistics(data.frame(l=ls, t=ts),x1=l,x2=t, statistics = 'spearman') -> a
-
-
-
-
-
-a<-rnorm(10)
-b<-rnorm(10)
-c<-t.test(a,b)
-
-
-set.seed(42)
-pvalue<-NULL
-for(i in 1:10000){
-  a<-rnorm(10)
-  b<-rnorm(10)
-  c<-t.test(a,b)
-  pvalue[i]<-c$p.value
-}
-hist(pvalue)
-
-set.seed(42)
-pvalue<-NULL
-for(i in 1:10000){
-  a<-rnorm(10,1)
-  b<-a+1
-  c<-t.test(a,b)
-  pvalue[i]<-c$p.value
-}
-hist(pvalue)
-
-
-
-
-
+# lncTf.0.9 <- lncTF.all(0.9)
+# lncTf.0.8 <- lncTF.all(0.8)
+# lncTf.0.7 <- lncTF.all(0.7)
+# lncTf.0.6 <- lncTF.all(0.6)
+# lncTf.0.5 <- lncTF.all(0.5)
+# lncTf.0.4 <- lncTF.all(0.4)
+# lncTf.0.3 <- lncTF.all(0.3)
+# lncTf.0.2 <- lncTF.all(0.2)
+# lncTf.0.1 <- lncTF.all(0.1)
+# 
+# system.time(lncTf.fimo.0.9 <- lncTF.all(0.9, tf='fimo'))
+# system.time(lncTf.fimo.0.8 <- lncTF.all(0.8, tf='fimo'))
+# system.time(lncTf.fimo.0.7 <- lncTF.all(0.7, tf='fimo'))
+# system.time(lncTf.fimo.0.6 <- lncTF.all(0.6, tf='fimo'))
+system.time(lncTf.fimo.0.5 <- lncTF.all(0.5, tf='fimo'))
+# system.time(lncTf.fimo.0.4 <- lncTF.all(0.4, tf='fimo'))
+# system.time(lncTf.fimo.0.3 <- lncTF.all(0.3, tf='fimo'))
+# system.time(lncTf.fimo.0.2 <- lncTF.all(0.2, tf='fimo'))
+# system.time(lncTf.fimo.0.1 <- lncTF.all(0.1, tf='fimo'))
 

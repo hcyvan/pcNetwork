@@ -25,6 +25,9 @@ helper.get.lncRNA.PCG <- function() {
   pcg <- read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
   rbind(lncRNA, pcg)
 }
+helper.get.PCG <- function() {
+  read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
+}
 
 helper.getGeneSymbol <- function(gene.id) {
   as.data.frame(bioMart)[match(gene.id, bioMart$Gene.stable.ID), 'HGNC.symbol']

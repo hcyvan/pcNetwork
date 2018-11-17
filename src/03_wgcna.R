@@ -9,7 +9,6 @@ biomart <- helper.get.biomart()
 
 genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
 datExpr <- t(as.matrix(genes.fpkm))
-
 # ----------------------------- WGCNA -------------------------------------
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()

@@ -50,7 +50,9 @@ bgj.new <- left_join(bg.jasper, biomart.pcgs, by=c('ensembl'='ensembl_gene_id'))
 bgj.new2 <- left_join(bg.jasper, biomart.pcgs, by=c('ensembl'='ensembl_gene_id'))%>%dplyr::select(tf=tf, symbol=ensembl)
 
 barplot(sort(table(bgj.new$tf)))
+barplot(sort(table(bg0.new$tf)))
 barplot(sort(table(bgj.new$symbol)))
+
 
 # -------------------------------------------
 
@@ -74,7 +76,7 @@ enricher.all.bg1 <- colorEnricherAll(bg1)
 enricher.all.bg2 <- colorEnricherAll(bg2)
 enricher.all.bg3 <- colorEnricherAll(bg3)
 enricher.all.bg0 <- colorEnricherAll(bg0)
-enricher.all.bg0.new <- colorEnricherAll(bg0.new) ### Use this
+enricher.all.bg0.new <- colorEnricherAll(bg0.new) ### Use this ***********************************************************
 write.csv(enricher.all.bg0.new, file = './data/enricher.all.bg0.new.csv', row.names = FALSE)
 
 
