@@ -19,7 +19,9 @@ helper.get.biomart <- function() {
   biomart <- distinct(biomart, Gene.stable.ID, .keep_all = TRUE)
   biomart
 }
-
+helper.get.diff.gene <- function() {
+  read.delim('./data/diff.qlf.csv', sep = ',', stringsAsFactors = FALSE)
+}
 helper.get.lncRNA.PCG <- function() {
   lncRNA <- read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
   pcg <- read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
@@ -27,6 +29,9 @@ helper.get.lncRNA.PCG <- function() {
 }
 helper.get.PCG <- function() {
   read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
+}
+helper.get.lncRNA <- function() {
+  read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
 }
 
 helper.getGeneSymbol <- function(gene.id) {

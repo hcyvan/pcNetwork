@@ -16,16 +16,16 @@ lncRNA.2.PCG.plot <- function(s) {
   tmp%>%barplot(main=s)
   summary(tmp)
 }
-# par(mfrow=c(3,3))
-# lncRNA.2.PCG.plot(0.1)
-# lncRNA.2.PCG.plot(0.2)
-# lncRNA.2.PCG.plot(0.3)
-# lncRNA.2.PCG.plot(0.4)
-# lncRNA.2.PCG.plot(0.5)
-# lncRNA.2.PCG.plot(0.6)
-# lncRNA.2.PCG.plot(0.7)
-# lncRNA.2.PCG.plot(0.8)
-# lncRNA.2.PCG.plot(0.9)
+par(mfrow=c(3,3))
+lncRNA.2.PCG.plot(0.1)
+lncRNA.2.PCG.plot(0.2)
+lncRNA.2.PCG.plot(0.3)
+lncRNA.2.PCG.plot(0.4)
+lncRNA.2.PCG.plot(0.5)
+lncRNA.2.PCG.plot(0.6)
+lncRNA.2.PCG.plot(0.7)
+lncRNA.2.PCG.plot(0.8)
+lncRNA.2.PCG.plot(0.9)
 
 ################################################# tf-pcg
 get.tf.2.PCG.from.enricher <- function() {
@@ -60,11 +60,14 @@ relation.matrix <- function(a2b) {
   rownames(a2b.m) <- b
   a2b.m
 }
+lncRNA.2.PCG <- get.lncRNA.2.PCG(0.3)
+tf.2.PCG <- get.tf.2.PCG.from.fimo()
+barplot(sapply(tf.2.PCG, function(x){length(x)})%>%sort)
 
-# tf.2.PCG.m <- relation.matrix(tf.2.PCG)
-# lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
+tf.2.PCG.m <- relation.matrix(tf.2.PCG)
+lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
 # 
-# heatmap(tf.2.PCG.m)
+heatmap(tf.2.PCG.m)
 # heatmap(lncRNA.2.PCG.m)
 ####################################### Fix tf.2.PCG.m & lncRNA.2.PCG.m
 fix.matrix <- function(lncRNA.2.PCG.m, tf.2.PCG.m) {
@@ -82,9 +85,18 @@ fix.matrix <- function(lncRNA.2.PCG.m, tf.2.PCG.m) {
   list(lncRNA=lncRNA.2.PCG.mf, tf=tf.2.PCG.mf)
 }
 
-# fix <- fix.matrix(lncRNA.2.PCG.m, tf.2.PCG.m)
-# heatmap(fix$tf)
-# heatmap(fix$lncRNA[,sample(ncol(fix$lncRNA), 50)])
+
+dim(lncRNA.2.PCG.m)
+dim(tf.2.PCG.m)
+fix <- fix.matrix(lncRNA.2.PCG.m, tf.2.PCG.m)
+dim(fix$lncRNA)
+dim(fix$tf)
+heatmap(fix$tf)
+heatmap(fix$tf[,sample(ncol(fix$tf), 50)])
+
+heatmap(fix$lncRNA)
+random.lncRNA <- fix$lncRNA[,sample(ncol(fix$lncRNA), 50)]
+heatmap(random.lncRNA)
 # ###################################### lncRNA 2 TF Phi ###################################################
 #           tf
 #           1   0           
@@ -206,4 +218,3 @@ system.time(lncTf.fimo.0.5 <- lncTF.all(0.5, tf='fimo'))
 # system.time(lncTf.fimo.0.3 <- lncTF.all(0.3, tf='fimo'))
 # system.time(lncTf.fimo.0.2 <- lncTF.all(0.2, tf='fimo'))
 # system.time(lncTf.fimo.0.1 <- lncTF.all(0.1, tf='fimo'))
-

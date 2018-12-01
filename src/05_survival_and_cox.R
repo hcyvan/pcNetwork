@@ -1,6 +1,7 @@
 library(dplyr)
 library(ggpubr)
 library(cowplot)
+library(survival)
 
 source('./lib/globals.R')
 source('./lib/helpers.R')
@@ -137,14 +138,26 @@ lapply(split(genes, seq(nrow(genes))), function(x){
   survdiff.gene(gene = x$GeneID)
 })->gene.surv.p
 surv.p.data <- as.data.frame(t(matrix(unlist(gene.surv.p), byrow = F, ncol= length(gene.surv.p))))
-colnames(surv.p.data) <- c('fds.mean','fds.median','os.mean', 'os.median', 'fd.cox.PH', 'fd.cox.p.value', 'fd.cox.PH', 'o.cox.p.value')
-surv.p.data <- data.frame(gene=genes$GeneID, symbol=genes$symbol, surv.p.data,
+colnames(surv.p.data) <- c('fds.mean','fds.median','os.mean', 'os.median', 'fd.cox.PH', 'fd.cox.p.value', 'o.cox.PH', 'o.cox.p.value')
+surv.p.data <- data.frame(gene=genes$GeneID, symbol=genes$symbol, type=genes$GeneType,surv.p.data,
                           fd.cox.p.adjust=p.adjust(surv.p.data$fd.cox.p.value, method='BH'),
                           o.cox.p.adjust=p.adjust(surv.p.data$o.cox.p.value, method='BH'),
                           stringsAsFactors = F)
 surv.p.data <- arrange(surv.p.data, fds.mean)
 write.csv(surv.p.data, file = './reports/surv.p.data.csv')
 
+### cox stat
+fd.cox <- surv.p.data%>%arrange(fd.cox.p.adjust)%>%filter(fd.cox.p.adjust<0.05)%>%
+  select(gene=gene,symbol=symbol,type=type, PH=fd.cox.PH,p.value=fd.cox.p.value,FDR=fd.cox.p.adjust)
+write.csv(fd.cox, file = './reports/fd.cox.csv')
+dim(fd.cox%>%filter(type%in%config$lncRNA))
+dim(fd.cox%>%filter(type%in%config$PCGs))
+
+o.cox <- surv.p.data%>%arrange(o.cox.p.adjust)%>%filter(o.cox.p.adjust<0.05)%>%
+  select(gene=gene,symbol=symbol,type=type, PH=o.cox.PH,p.value=o.cox.p.value,FDR=o.cox.p.adjust)
+write.csv(o.cox, file = './reports/o.cox.csv')
+dim(o.cox%>%filter(type%in%config$lncRNA))
+dim(o.cox%>%filter(type%in%config$PCGs))
 #################################################################################### Multivariate Regression
 # surv.p.data%>%arrange(cox.p.value)%>%filter(cox.p.value <0.05)->genes
 # geneList=genes$gene

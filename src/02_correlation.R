@@ -5,7 +5,10 @@ diff.gene <- helper.get.lncRNA.PCG()
 data.fpkm <- helper.get.fpkm.count()
 biomart <- helper.get.biomart()
 
-genes.fpkm <- data.fpkm[rownames(data.fpkm)%in%diff.gene$GeneID,]
+genes.fpkm.f <- data.fpkm[rownames(data.fpkm)%in%diff.gene$GeneID,]
+genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
+
+
 genes.anno <- left_join(diff.gene, biomart, by=c('GeneID'='Gene.stable.ID')) %>%
   select(colnames(diff.gene), 
          tss = Transcription.start.site..TSS.,
@@ -53,4 +56,10 @@ getCorDistTable <- function(genes, anno, pvalue) {
 
 diff.cor.pairs <- getCorDistTable(genes.fpkm, genes.anno, cor.pvalue)
 save(diff.cor.pairs, file = './cache/diff.qlf.2877.pairs.rda')
+
+
+################################## lncRNA vs mRNA
+corr <- cor(t(as.matrix(genes.fpkm)))
+lncRNA_pcg_corr <- corr[genes.anno$GeneType%in%config$PCGs,genes.anno$GeneType%in%config$lncRNA]
+heatmap(lncRNA_pcg_corr[sample(nrow(lncRNA_pcg_corr), 200),sample(ncol(lncRNA_pcg_corr), 50)])
 

@@ -30,7 +30,12 @@ get.tf.2.PCG.from.fimo <- function() {
     tf.2.PCG
   }
 }
-
+get.tf.pcgs <- function(tf) {
+  get.tf.2.PCG.from.fimo()[[tf]]
+}
+get.lncRNA.pcgs <- function(lncRNA, l.s) {
+  get.lncRNA.2.PCG(l.s)[[lncRNA]]
+}
 get.intersect.pcg <- function(lncRNA, tf, l.s){
   intersect(get.lncRNA.2.PCG(l.s)[[lncRNA]], get.tf.2.PCG.from.fimo()[[tf]])
 }
@@ -58,7 +63,7 @@ lncRNA.tf.fimo.0.1 <- get.lncRNA.tf.fimo(0.1)
 ############################################################ parse
 load('./cache/biomart.symbol.biotype.rda')
 lncRNA2TF.parse<- function(lncRNA.tf.fimo.s, l.s=0.5) {
-  lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(p.adjust<0.05)
+  lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(p.adjust<0.05, phi>0, X11+X10>(X11+X10+X1+X0)/10)
   if (nrow(lncRNA.tf)==0) {
     tf=vector()
     lncRNA=vector()
@@ -104,6 +109,7 @@ lncTP.0.2 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.2, 0.2)
 lncTP.0.1 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.1, 0.1)
 
 save(lncTP.0.1, lncTP.0.2, lncTP.0.3, lncTP.0.4, lncTP.0.5, lncTP.0.6, lncTP.0.7, lncTP.0.8, lncTP.0.9, file = './cache/lncTP.0.x.rda')
+load('./cache/lncTP.0.x.rda')
 
 
 lncTP.0.1
@@ -116,22 +122,51 @@ lncTP.0.7
 lncTP.0.8
 lncTP.0.9
 
-
+par(mfrow=c(3,3))
 for(s in seq(0.1,0.9,0.1)) {
   lnctp <- get(paste0('lncTP.',s))
   cat('---------------------------',s,'----------------------------------------');cat('\n')
   print(lnctp)
   print(sort(lnctp$tf))
+  print(ncol(lnctp$detail))
+  if (nrow(lnctp$detail) > 0) {
+    barplot(sort(lnctp$detail$X11), main=s)
+  }
 }
 
 
+write.csv(lncTP.0.3$tf, './data/lnctp.tf.csv')
+write.csv(lncTP.0.3$lncRNA, './data/lnctp.lncRNA.csv')
+write.csv(lncTP.0.3$detail, './data/lnctp.detail.csv')
 
 
 
+##############################################
+## tf in pcgs
+pcg.all.id <- Reduce(union, lncTP.0.3$detail.inter)
+pcg.all.symbol <- biomart.symbol.biotype[match(pcg.all.id, biomart.symbol.biotype$ensembl_gene_id),'hgnc_symbol']
+intersect(pcg.all.symbol, lncTP.0.3$tf)
+
+## demo
+lncTP.0.3$detail%>%filter(tf=='AR')
+length(get.tf.pcgs('AR'))
+length(get.lncRNA.pcgs('ENSG00000237476',0.3))
 
 
 
+get.tf.2.PCG.from.fimo()->tf.2.PCG
+get.tf.2.PCG.from.enricher()->tf.2.PCG.2
 
+barplot(sapply(tf.2.PCG, function(x){length(x)})%>%sort())
+names(tf.2.PCG)%>%sort()->fimo
+barplot(sapply(tf.2.PCG.2, function(x){length(x)})%>%sort())
+names(tf.2.PCG.2)%>%sort()
 
+lncRNA.2.PCG <- get.lncRNA.2.PCG(0.5)
+
+barplot(sapply(lncRNA.2.PCG, function(x){length(x)})%>%sort())
+
+starbase <- read.delim('./data/lncRNA_rbp.txt',stringsAsFactors = F)
+starbase$RBP%>%unique()
 
 

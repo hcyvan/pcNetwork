@@ -6,10 +6,11 @@ source('./lib/globals.R')
 source('./lib/helpers.R')
 
 getDE <- function(def, lfc=1, p.value=0.05) {
+  fdr <- p.adjust(def$table$PValue, method = 'BH')
   is.de <- decideTestsDGE(def, lfc=lfc, p.value = p.value)
   de <- def$table[is.de!=0,]
   de.genes <- def$genes[match(rownames(de), rownames(def$genes)),]
-  cbind(de.genes, de)
+  cbind(de.genes, de,FDR=fdr[is.de!=0])
 }
 
 data.count <- helper.get.data.count()
@@ -47,7 +48,8 @@ is.de <- decideTests(qlf, lfc=lfc, p.value = p.value)
 summary(is.de)
 plotMD(qlf, status = is.de, values=c(1, -1), col=c("red","blue"))
 
-diff.qlf <- getDE(qlf, lfc=lfc, p.value = p.value)
+## the NA line is because not Every gene is RNA-seq is annotated in biomart
+diff.qlf <- getDE(qlf, lfc=lfc, p.value = p.value) # <--------------- USE THIS 
 diff.qlf.lncRNA <- filter(diff.qlf , GeneType %in% config$lncRNA)
 diff.qlf.pcg <- filter(diff.qlf , GeneType %in% config$PCGs)
 write.csv(diff.qlf, file = './data/diff.qlf.csv', row.names = FALSE)
