@@ -4,15 +4,15 @@ source('./lib/helpers.R')
 
 
 ############################################################# Code from 03_lncRNA2TF.R
-load('./cache/diff.qlf.2877.pairs.rda') # diff.cor.pairs
-get.lncRNA.2.PCG <- function(s=0) {
+cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
+get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
   env = globalenv()
   key = paste0('.lncRNA.2.PCG.',s)
   if (exists(key, envir = env)) {
     get(key,envir = env)
   } else {
-    data <- filter(diff.cor.pairs, type1%in%config$lncRNA & type2%in%config$PCGs&significant&abs(r)>=s)
-    lncRNA.2.PCG <- lapply(split(data,as.vector(data$Var1)), function(x){as.vector(x$Var2)})
+    data <- filter(cor.pairs.info, type1%in%s1 & type2%in%s2 & FDR<fdr & abs(r)>=s)
+    lncRNA.2.PCG <- lapply(split(data,as.vector(data$v1)), function(x){as.vector(x$v2)})
     assign(key, lncRNA.2.PCG, envir = env)
     lncRNA.2.PCG
   }
@@ -63,7 +63,7 @@ lncRNA.tf.fimo.0.1 <- get.lncRNA.tf.fimo(0.1)
 ############################################################ parse
 load('./cache/biomart.symbol.biotype.rda')
 lncRNA2TF.parse<- function(lncRNA.tf.fimo.s, l.s=0.5) {
-  lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(p.adjust<0.05, phi>0, X11+X10>(X11+X10+X1+X0)/10)
+  lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(FDR<0.05, phi>0, v11+v10>(v11+v10+v1+v0)/10)
   if (nrow(lncRNA.tf)==0) {
     tf=vector()
     lncRNA=vector()
@@ -130,7 +130,7 @@ for(s in seq(0.1,0.9,0.1)) {
   print(sort(lnctp$tf))
   print(ncol(lnctp$detail))
   if (nrow(lnctp$detail) > 0) {
-    barplot(sort(lnctp$detail$X11), main=s)
+    barplot(sort(lnctp$detail$v11), main=s)
   }
 }
 

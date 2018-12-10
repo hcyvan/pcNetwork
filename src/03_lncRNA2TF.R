@@ -3,12 +3,18 @@ source('./lib/globals.R')
 source('./lib/helpers.R')
 
 ############################################### lncRNA-pcg
-load('./cache/diff.qlf.2877.pairs.rda') # diff.cor.pairs
-
-get.lncRNA.2.PCG <- function(s=0) {
-  data <- filter(diff.cor.pairs, type1%in%config$lncRNA & type2%in%config$PCGs&significant&abs(r)>=s)
-  lncRNA.2.PCG <- lapply(split(data,as.vector(data$Var1)), function(x){as.vector(x$Var2)})
-  lncRNA.2.PCG
+cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
+get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
+  env = globalenv()
+  key = paste0('.lncRNA.2.PCG.',s)
+  if (exists(key, envir = env)) {
+    get(key,envir = env)
+  } else {
+    data <- filter(cor.pairs.info, type1%in%s1 & type2%in%s2 & FDR<fdr & abs(r)>=s)
+    lncRNA.2.PCG <- lapply(split(data,as.vector(data$v1)), function(x){as.vector(x$v2)})
+    assign(key, lncRNA.2.PCG, envir = env)
+    lncRNA.2.PCG
+  }
 }
 
 lncRNA.2.PCG.plot <- function(s) {
@@ -91,10 +97,7 @@ dim(tf.2.PCG.m)
 fix <- fix.matrix(lncRNA.2.PCG.m, tf.2.PCG.m)
 dim(fix$lncRNA)
 dim(fix$tf)
-heatmap(fix$tf)
 heatmap(fix$tf[,sample(ncol(fix$tf), 50)])
-
-heatmap(fix$lncRNA)
 random.lncRNA <- fix$lncRNA[,sample(ncol(fix$lncRNA), 50)]
 heatmap(random.lncRNA)
 # ###################################### lncRNA 2 TF Phi ###################################################
@@ -152,32 +155,18 @@ lncTF <- function(lncRNA.2.PCG.mf, tf.2.PCG.mf) {
   lncRNA.tf.10 <- phiContingencyMulti(10)
   lncRNA.tf.1 <- phiContingencyMulti(1)
   lncRNA.tf.0 <- phiContingencyMulti(0)
-  
-  #holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
-  #   "fdr", "none")
+
   lncRNA.tf.list <- reshape2::melt(lncRNA.tf.phi)
   colnames(lncRNA.tf.list) <- c('lncRNA', 'tf', 'phi')
   lncRNA.tf.list <- data.frame(lncRNA.tf.list,
                                p.value=reshape2::melt(lncRNA.tf.phi.p)$value,
-                               # p.adjust=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value),
-                               # p.holm=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'holm'),
-                               # p.hochberg=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hochberg'),
-                               # p.hommel=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'hommel'),
-                               # p.bonferroni=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'bonferroni'),
-                               p.adjust=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BH'),
-                               # p.BY=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BY'),
-                               # p.fdr=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'fdr'),
-                               # p.none=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'none'),
-                               '11'=reshape2::melt(lncRNA.tf.11)$value,
-                               '10'=reshape2::melt(lncRNA.tf.10)$value,
-                               '1'=reshape2::melt(lncRNA.tf.1)$value,
-                               '0'=reshape2::melt(lncRNA.tf.0)$value)
-  lncRNA.tf.list
+                               FDR=p.adjust(reshape2::melt(lncRNA.tf.phi.p)$value, method = 'BH'),
+                               'v11'=reshape2::melt(lncRNA.tf.11)$value,
+                               'v10'=reshape2::melt(lncRNA.tf.10)$value,
+                               'v1'=reshape2::melt(lncRNA.tf.1)$value,
+                               'v0'=reshape2::melt(lncRNA.tf.0)$value)
+  arrange(lncRNA.tf.list, FDR)
 }
-# lncRNA.tf.list <- lncTF(fix$lncRNA, fix$tf)
-# 
-# write.csv(lncRNA.tf.list, file = './data/lncRNA.tf.list.csv')
-
 
 #################################################
 
@@ -191,30 +180,18 @@ lncTF.all <- function(s=0, tf='enricher') {
   lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
   tf.2.PCG.m <- relation.matrix(tf.2.PCG)
   fix <- fix.matrix(lncRNA.2.PCG.m, tf.2.PCG.m)
-  print(ncol(fix$lncRNA))
-  print(ncol(fix$tf))
+  message(paste('Calculate Phi of',ncol(fix$lncRNA), 'lncRNA and', ncol(fix$tf),'TF'))
   lncRNA.tf.list <- lncTF(fix$lncRNA, fix$tf)
-  lncRNA.tf.list <- arrange(lncRNA.tf.list, p.value)
   write.csv(lncRNA.tf.list, file = paste0('./data/lncRNA.tf.list/lncRNA.tf.',tf,'.',s,'.csv'))
   lncRNA.tf.list
 }
 
-# lncTf.0.9 <- lncTF.all(0.9)
-# lncTf.0.8 <- lncTF.all(0.8)
-# lncTf.0.7 <- lncTF.all(0.7)
-# lncTf.0.6 <- lncTF.all(0.6)
-# lncTf.0.5 <- lncTF.all(0.5)
-# lncTf.0.4 <- lncTF.all(0.4)
-# lncTf.0.3 <- lncTF.all(0.3)
-# lncTf.0.2 <- lncTF.all(0.2)
-# lncTf.0.1 <- lncTF.all(0.1)
-# 
-# system.time(lncTf.fimo.0.9 <- lncTF.all(0.9, tf='fimo'))
-# system.time(lncTf.fimo.0.8 <- lncTF.all(0.8, tf='fimo'))
-# system.time(lncTf.fimo.0.7 <- lncTF.all(0.7, tf='fimo'))
-# system.time(lncTf.fimo.0.6 <- lncTF.all(0.6, tf='fimo'))
+system.time(lncTf.fimo.0.1 <- lncTF.all(0.1, tf='fimo'))
+system.time(lncTf.fimo.0.2 <- lncTF.all(0.2, tf='fimo'))
+system.time(lncTf.fimo.0.3 <- lncTF.all(0.3, tf='fimo'))
+system.time(lncTf.fimo.0.4 <- lncTF.all(0.4, tf='fimo'))
 system.time(lncTf.fimo.0.5 <- lncTF.all(0.5, tf='fimo'))
-# system.time(lncTf.fimo.0.4 <- lncTF.all(0.4, tf='fimo'))
-# system.time(lncTf.fimo.0.3 <- lncTF.all(0.3, tf='fimo'))
-# system.time(lncTf.fimo.0.2 <- lncTF.all(0.2, tf='fimo'))
-# system.time(lncTf.fimo.0.1 <- lncTF.all(0.1, tf='fimo'))
+system.time(lncTf.fimo.0.6 <- lncTF.all(0.6, tf='fimo'))
+system.time(lncTf.fimo.0.7 <- lncTF.all(0.7, tf='fimo'))
+system.time(lncTf.fimo.0.8 <- lncTF.all(0.8, tf='fimo'))
+system.time(lncTf.fimo.0.9 <- lncTF.all(0.9, tf='fimo'))
