@@ -5,7 +5,6 @@ diff.gene <- helper.get.lncRNA.PCG()
 data.fpkm <- helper.get.fpkm.count()
 biomart <- helper.get.biomart()
 
-genes.fpkm.f <- data.fpkm[rownames(data.fpkm)%in%diff.gene$GeneID,]
 genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
 
 
@@ -28,9 +27,10 @@ cor.test.multi <- function(data) {
     })
   })
 }
-load('./cache/diff.qlf.2877.cor.pvalue.rda')
+
 # system.time(cor.pvalue <- cor.test.multi(genes.fpkm))
-# save(cor.pvalue, file='cache/diff.qlf.2877.cor.pvalue.rda')
+# saveRDS(cor.pvalue, './cache/diff.qlf.2877.cor.pvalue.rds')
+cor.pvalue <- readRDS('./cache/diff.qlf.2877.cor.pvalue.rds')
 
 getCorDistTable <- function(genes, anno, pvalue) {
   dimnames(pvalue) <- list(anno$GeneID, anno$GeneID)
@@ -54,9 +54,9 @@ getCorDistTable <- function(genes, anno, pvalue) {
   corr.pairs
 }
 
-diff.cor.pairs <- getCorDistTable(genes.fpkm, genes.anno, cor.pvalue)
-save(diff.cor.pairs, file = './cache/diff.qlf.2877.pairs.rda')
-
+# diff.cor.pairs <- getCorDistTable(genes.fpkm, genes.anno, cor.pvalue)
+# saveRDS(diff.cor.pairs, file = './cache/diff.qlf.2877.pairs.rds')
+diff.cor.pairs<-readRDS('./cache/diff.qlf.2877.pairs.rds')
 
 ################################## lncRNA vs mRNA
 corr <- cor(t(as.matrix(genes.fpkm)))
