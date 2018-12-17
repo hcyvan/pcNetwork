@@ -8,17 +8,32 @@ helper.get.data.count <- function() {
   data.count
 }
 
-helper.get.fpkm.count <- function() {
-  data.fpkm <- read.delim('./data/data.fpkm.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
-  rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
+helper.get.fpkm.count <- function(refresh=FALSE) {
+  rds.path <- './cache/data.fpkm.rds'
+  csv.path <- './data/data.fpkm.csv'
+  if (file.exists(rds.path)&& !refresh) {
+    data.fpkm <- readRDS(rds.path)
+  } else {
+    data.fpkm <- read.delim(csv.path, sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
+    rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
+    saveRDS(data.fpkm, file = rds.path)
+  }
   data.fpkm
 }
 
-helper.get.biomart <- function() {
-  biomart <- read.delim('./data/mart_export.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
-  biomart <- distinct(biomart, Gene.stable.ID, .keep_all = TRUE)
+helper.get.biomart <- function(refresh=FALSE) {
+  rds.path <- './cache/mart_export.rds'
+  csv.path <- './data/mart_export.csv'
+  if (file.exists(rds.path)&& !refresh) {
+    biomart <- readRDS(rds.path)
+  } else {
+    biomart <- read.delim(csv.path, sep = ',', header = TRUE, stringsAsFactors = FALSE)
+    biomart <- distinct(biomart, Gene.stable.ID, .keep_all = TRUE)
+    saveRDS(biomart, file = rds.path)
+  }
   biomart
 }
+
 helper.get.diff.gene <- function() {
   read.delim('./data/diff.qlf.csv', sep = ',', stringsAsFactors = FALSE)
 }
@@ -32,6 +47,18 @@ helper.get.PCG <- function() {
 }
 helper.get.lncRNA <- function() {
   read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
+}
+
+helper.get.cell.localization <- function(id) {
+  env = globalenv()
+  key='.cell.location'
+  if (exists(key, envir = env)) {
+    get(key,envir = env)
+  } else {
+    cell.location <- readRDS('./cache/cell.location.rds')
+    assign(key, cell.location, envir = env)
+    cell.location
+  }
 }
 
 helper.getGeneSymbol <- function(gene.id) {

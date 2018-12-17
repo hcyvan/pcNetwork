@@ -1,18 +1,18 @@
-library(WGCNA)
-
 source('./lib/globals.R')
 source('./lib/helpers.R')
+
+library(WGCNA)
 
 diff.gene <- helper.get.lncRNA.PCG()
 data.fpkm <- helper.get.fpkm.count()
 biomart <- helper.get.biomart()
 
 genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
-datExpr <- t(as.matrix(genes.fpkm))
 # ----------------------------- WGCNA -------------------------------------
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
 
+datExpr <- t(as.matrix(genes.fpkm))
 # ----------------------------
 corType <- "pearson"
 corFnc = ifelse(corType=="pearson", cor, bicor)
@@ -65,14 +65,14 @@ system.time(
 load(net$TOMFiles)
 load('./cache/diff.qlf.2877.tom-block.1.RData')
 tom <- as.matrix(TOM)
+saveRDS(tom, file = './cache/tom.rds')
 rm(TOM)
 
 ## -------------------------------
 sizeGrWindow(2, 9)
-moduleLabels <- net$colors
-moduleColors <- labels2colors(net$colors)
+colors <- labels2colors(net$colors)
 tiff(paste0(resultPath, 'clusterDendrogram.tiff'), width = 862, height = 571)
-plotDendroAndColors(net$dendrograms[[1]], moduleColors[net$blockGenes[[1]]], 'Moudle colors',
+plotDendroAndColors(net$dendrograms[[1]], colors[net$blockGenes[[1]]], 'Moudle colors',
                     dendroLabels = FALSE,
                     hang= 0.3,
                     addGuide = TRUE,
@@ -80,9 +80,7 @@ plotDendroAndColors(net$dendrograms[[1]], moduleColors[net$blockGenes[[1]]], 'Mo
 dev.off()
 
 ## ----    Module Eigengene relationship / Eigengene Networks ---------
-MEs <- moduleEigengenes(datExpr,
-                        moduleColors,
-                        softPower = sft$powerEstimate)$eigengenes
+MEs <- moduleEigengenes(datExpr, colors, softPower = sft$powerEstimate)$eigengenes
 MEs <- orderMEs(MEs)
 tiff(paste0(resultPath, 'ModuleRelationship.tiff'), width = 862, height = 571)
 plotEigengeneNetworks(MEs, "Eigengene adjacency heatmap", 
@@ -90,13 +88,12 @@ plotEigengeneNetworks(MEs, "Eigengene adjacency heatmap",
                       marHeatmap = c(3,16,2,16), plotDendrograms = T, 
                       xLabelsAngle = 90)
 dev.off()
-
 ## ---- gene VS. module -------
 MGs <- list()
 MGs.col <- data.frame()
-for(c in unique(moduleColors)){
+for(c in unique(colors)){
   print(c)
-  datExpr_c = datExpr[,moduleColors==c]
+  datExpr_c = datExpr[,colors==c]
   cor_c <- cor(datExpr_c, MEs[[paste0('ME',c)]])
   colnames(cor_c) <- 'cor'
   MGs[[c]] <- cor_c
@@ -110,19 +107,10 @@ summaryTable <- function(data) {
   data.frame(lncRNA=lncRNA, PCG=PCG)
 }
 
-gene.module <- data.frame(diff.gene, moduleColor=moduleColors)
+gene.module <- data.frame(diff.gene, colors=colors)
 gene.module <- data.frame(gene.module, mg.cor=MGs.col$mg.cor[match(gene.module$GeneID, rownames(MGs.col))])
-gene.module.summary <- summaryTable(table(gene.module[c('moduleColor', 'GeneType')]))
+gene.module.summary <- summaryTable(table(gene.module[c('colors', 'GeneType')]))
 write.csv(gene.module, file = paste0(resultPath, 'geneModule.csv'))
 write.csv(gene.module.summary , file=paste0(resultPath, 'geneModuleTable.csv'))
-write.csv(data.frame(id=gene.module$GeneID, type=gene.module$GeneType,color=gene.module$moduleColor, mg.cor=gene.module$mg.cor),
-          row.names = FALSE,
-          file ='./data/diff.qlf.2877.wgcna.color.csv')
-
-
-################################ step by step #####################################
-softPower <- sft$powerEstimate
-system.time(adjacency <- adjacency(datExpr, power = softPower))
-
-
-
+saveRDS(data.frame(id=gene.module$GeneID, type=gene.module$GeneType,colors=gene.module$colors, mg.cor=gene.module$mg.cor),
+          file ='./cache/wgcna.colors.rds')
