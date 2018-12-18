@@ -1,0 +1,10 @@
+Package: x2y
+Title: Find the relationship of x and y
+Version: 0.01
+Authors@R: person("Navy Cheng", email = "navych@126.com", role = c("aut", "cre"))
+Description: x is interact with a set {Zi}, y is interact with a set {Zj}. {Zi} and {Zj} have some common element, eg. {Zi}={a,b,c,d,e} and {Zj}={b,c,d,e,f}. Is there a realationship between x and y? Let's do this. 
+Depends: R (>= 3.5.1)
+License: MIT License
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.1

@@ -1,3 +1,5 @@
+library(devtools)
+
 config <- list(
   lncRNA = c('lincRNA',
              'bidirectional_promoter_lncRNA',

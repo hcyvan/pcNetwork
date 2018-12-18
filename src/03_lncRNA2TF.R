@@ -2,78 +2,74 @@ library(dplyr)
 source('./lib/globals.R')
 source('./lib/helpers.R')
 
-############################################### lncRNA-pcg
-cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
+############################################### GET x.2.y
 get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
   env = globalenv()
   key = paste0('.lncRNA.2.PCG.',s)
   if (exists(key, envir = env)) {
     get(key,envir = env)
   } else {
-    data <- filter(cor.pairs.info, type1%in%s1 & type2%in%s2 & FDR<fdr & abs(r)>=s)
+    cor.pairs <- readRDS('./cache/cor.pairs.info.rds')
+    data <- filter(cor.pairs, type1%in%config$lncRNA & type2%in%config$PCGs & FDR<fdr & abs(r)>=s)
     lncRNA.2.PCG <- lapply(split(data,as.vector(data$v1)), function(x){as.vector(x$v2)})
     assign(key, lncRNA.2.PCG, envir = env)
     lncRNA.2.PCG
   }
 }
+get.tf.2.PCG.from.fimo <- function() {
+  env = globalenv()
+  key = '.tf.2.PCG'
+  if (exists(key, envir = env)) {
+    get(key, envir = env)
+  } else {
+    fimo <- read.delim('./data/enricher/fimo.460.2230.tsv', stringsAsFactors = F)
+    fimo <- filter(fimo, motif_alt_id!='')
+    tf.2.PCG <- lapply(split(fimo,as.vector(fimo$motif_alt_id)), function(x){unique(as.vector(x$sequence_name))})
+    assign(key, tf.2.PCG, envir = env)
+    tf.2.PCG
+  }
+}
 
-lncRNA.2.PCG.plot <- function(s) {
-  sapply(get.lncRNA.2.PCG(s), function(x){length(x)})%>%sort->tmp
-  tmp%>%barplot(main=s)
+plot.lncRNA.2.PCG <- function() {
+  par(mfrow=c(3,3))
+  for (s in seq(0.1, 0.9, 0.1)) {
+    sapply(get.lncRNA.2.PCG(s), function(x){length(x)})%>%sort->tmp
+    tmp%>%barplot(main=s)
+    summary(tmp)
+  }
+  par(mfrow=c(1,1))
+}
+
+plot.tf.2.PCG <- function() {
+  sapply(get.tf.2.PCG.from.fimo(), function(x){length(x)})%>%sort->tmp
+  tmp%>%barplot()
   summary(tmp)
 }
-par(mfrow=c(3,3))
-lncRNA.2.PCG.plot(0.1)
-lncRNA.2.PCG.plot(0.2)
-lncRNA.2.PCG.plot(0.3)
-lncRNA.2.PCG.plot(0.4)
-lncRNA.2.PCG.plot(0.5)
-lncRNA.2.PCG.plot(0.6)
-lncRNA.2.PCG.plot(0.7)
-lncRNA.2.PCG.plot(0.8)
-lncRNA.2.PCG.plot(0.9)
-
+# plot.lncRNA.2.PCG()
+# plot.tf.2.PCG()
 ################################################# tf-pcg
-get.tf.2.PCG.from.enricher <- function() {
-  tf.enricher <- read.delim('./data/enricher.all.bg0.new.csv', sep = ',', stringsAsFactors = F)
-  tf.enricher.list <- setNames(split(tf.enricher, seq(nrow(tf.enricher))), tf.enricher$detail.ID)
-  
-  load('./cache/biomart.symbol.biotype.rda')
-  
-  lapply(tf.enricher.list, function(tf){
-    symbol <- str_split(tf$detail.geneID, '/')[[1]]
-    filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
-  })
-}
+# get.tf.2.PCG.from.enricher <- function() {
+#   tf.enricher <- read.delim('./data/enricher.all.bg0.new.csv', sep = ',', stringsAsFactors = F)
+#   tf.enricher.list <- setNames(split(tf.enricher, seq(nrow(tf.enricher))), tf.enricher$detail.ID)
+#   
+#   load('./cache/biomart.symbol.biotype.rda')
+#   
+#   lapply(tf.enricher.list, function(tf){
+#     symbol <- str_split(tf$detail.geneID, '/')[[1]]
+#     filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
+#   })
+# }
 
-get.tf.2.PCG.from.fimo <- function() {
-  fimo <- read.delim('./data/enricher/fimo.460.2230.tsv', stringsAsFactors = F)
-  fimo <- filter(fimo, motif_alt_id!='')
-  lapply(split(fimo,as.vector(fimo$motif_alt_id)), function(x){unique(as.vector(x$sequence_name))})
-}
+#############################################################
+devtools::load_all('./package/x2y/')
 
-############################################################# map to matrix
-
-relation.matrix <- function(a2b) {
-  names(a2b) -> a
-  Reduce(union,a2b) -> b
-  
-  lapply(a2b, function(t){
-    b%in%t %>% as.numeric()
-  }) -> a2b.loc
-  a2b.m <- matrix(unlist(a2b.loc), ncol = length(a2b.loc))
-  colnames(a2b.m) <- a
-  rownames(a2b.m) <- b
-  a2b.m
-}
 lncRNA.2.PCG <- get.lncRNA.2.PCG(0.3)
 tf.2.PCG <- get.tf.2.PCG.from.fimo()
-barplot(sapply(tf.2.PCG, function(x){length(x)})%>%sort)
 
-tf.2.PCG.m <- relation.matrix(tf.2.PCG)
-lncRNA.2.PCG.m <- relation.matrix(lncRNA.2.PCG)
+tf.2.PCG.m <- x2yMatrix(tf.2.PCG)
+lncRNA.2.PCG.m <- x2yMatrix(lncRNA.2.PCG)
 # 
-heatmap(tf.2.PCG.m)
+# heatmap(tf.2.PCG.m)
 # heatmap(lncRNA.2.PCG.m)
 ####################################### Fix tf.2.PCG.m & lncRNA.2.PCG.m
 fix.matrix <- function(lncRNA.2.PCG.m, tf.2.PCG.m) {
@@ -200,38 +196,11 @@ system.time(lncTf.fimo.0.9 <- lncTF.all(0.9, tf='fimo'))
 #############################################################################################
 #############################################################################################
 #############################################################################################
-library(dplyr)
-source('./lib/globals.R')
-source('./lib/helpers.R')
+
 
 
 ############################################################# Code from 03_lncRNA2TF.R
-cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
-get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
-  env = globalenv()
-  key = paste0('.lncRNA.2.PCG.',s)
-  if (exists(key, envir = env)) {
-    get(key,envir = env)
-  } else {
-    data <- filter(cor.pairs.info, type1%in%s1 & type2%in%s2 & FDR<fdr & abs(r)>=s)
-    lncRNA.2.PCG <- lapply(split(data,as.vector(data$v1)), function(x){as.vector(x$v2)})
-    assign(key, lncRNA.2.PCG, envir = env)
-    lncRNA.2.PCG
-  }
-}
-get.tf.2.PCG.from.fimo <- function() {
-  env = globalenv()
-  key = '.tf.2.PCG'
-  if (exists(key, envir = env)) {
-    get(key, envir = env)
-  } else {
-    fimo <- read.delim('./data/enricher/fimo.460.2230.tsv', stringsAsFactors = F)
-    fimo <- filter(fimo, motif_alt_id!='')
-    tf.2.PCG <- lapply(split(fimo,as.vector(fimo$motif_alt_id)), function(x){unique(as.vector(x$sequence_name))})
-    assign(key, tf.2.PCG, envir = env)
-    tf.2.PCG
-  }
-}
+
 get.tf.pcgs <- function(tf) {
   get.tf.2.PCG.from.fimo()[[tf]]
 }
