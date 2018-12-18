@@ -8,7 +8,7 @@ helper.get.data.count <- function() {
   data.count
 }
 
-helper.get.fpkm.count <- function(refresh=FALSE) {
+helper.get.fpkm <- function(refresh=FALSE) {
   rds.path <- './cache/data.fpkm.rds'
   csv.path <- './data/data.fpkm.csv'
   if (file.exists(rds.path)&& !refresh) {
@@ -32,6 +32,25 @@ helper.get.biomart <- function(refresh=FALSE) {
     saveRDS(biomart, file = rds.path)
   }
   biomart
+}
+
+helper.get.diff.fpkm <- function(refresh=FALSE) {
+  data <- helper.get.fpkm(refresh=refresh)
+  diff.gene <- helper.get.lncRNA.PCG()
+  genes.fpkm <- data[match(diff.gene$GeneID,rownames(data)),]
+}
+
+helper.get.diff.anno <- function(refresh=FALSE) {
+  biomart <- helper.get.biomart(refresh=refresh)
+  diff.gene <- helper.get.lncRNA.PCG()
+  genes.anno <- left_join(diff.gene, biomart, by=c('GeneID'='Gene.stable.ID')) %>%
+    select(colnames(diff.gene),
+           tss = Transcription.start.site..TSS.,
+           geneStart = Transcript.start..bp., 
+           geneEnd = Transcript.end..bp., 
+           chromosome = Chromosome.scaffold.name)
+  print(head(genes.anno))
+  genes.anno
 }
 
 helper.get.diff.gene <- function() {

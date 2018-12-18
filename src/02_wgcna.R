@@ -4,10 +4,9 @@ source('./lib/helpers.R')
 library(WGCNA)
 
 diff.gene <- helper.get.lncRNA.PCG()
-data.fpkm <- helper.get.fpkm.count()
+genes.fpkm <- helper.get.diff.fpkm()
 biomart <- helper.get.biomart()
 
-genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
 # ----------------------------- WGCNA -------------------------------------
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
@@ -18,7 +17,7 @@ corType <- "pearson"
 corFnc = ifelse(corType=="pearson", cor, bicor)
 maxPOutliers <- ifelse(corType=="pearson",1,0.05)
 robustY = ifelse(corType=="pearson",T,F)
-networkType <- 'signed'
+networkType <- 'unsigned'
 
 resultPath <- './reports/wgcna/'
 TOMfile <- './cache/diff.qlf.2877.tom'
@@ -51,7 +50,6 @@ system.time(
                           corType = corType,
                           maxPOutliers = maxPOutliers,
                           networkType = networkType,
-                          TOMType = 'signed', 
                           minModuleSize = 30,
                           reassignThreshold = 0,
                           mergeCutHeight = 0.25,
@@ -114,3 +112,27 @@ write.csv(gene.module, file = paste0(resultPath, 'geneModule.csv'))
 write.csv(gene.module.summary , file=paste0(resultPath, 'geneModuleTable.csv'))
 saveRDS(data.frame(id=gene.module$GeneID, type=gene.module$GeneType,colors=gene.module$colors, mg.cor=gene.module$mg.cor),
           file ='./cache/wgcna.colors.rds')
+
+
+
+###################################################
+
+tom.2 = TOMsimilarityFromExpr(datExpr, power = sft$powerEstimate)
+tom.2 = TOMsimilarityFromExpr(datExpr, power = sft$powerEstimate, networkType = 'signed')
+
+adjacency.2 = adjacency(datExpr, power = sft$powerEstimate,type='signed')
+adjacency = adjacency(datExpr, power = sft$powerEstimate)
+tom.3 <- TOMsimilarity(adjacency.2)
+tom.4 <- TOMsimilarity(adjacency, TOMType = 'signed')
+
+
+
+
+
+
+
+
+
+
+
+

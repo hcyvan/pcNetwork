@@ -2,19 +2,8 @@ source('./lib/globals.R')
 source('./lib/helpers.R')
 
 diff.gene <- helper.get.lncRNA.PCG()
-data.fpkm <- helper.get.fpkm.count()
-biomart <- helper.get.biomart()
-
-genes.fpkm <- data.fpkm[match(diff.gene$GeneID,rownames(data.fpkm)),]
-
-
-genes.anno <- left_join(diff.gene, biomart, by=c('GeneID'='Gene.stable.ID')) %>%
-  select(colnames(diff.gene), 
-         tss = Transcription.start.site..TSS.,
-         geneStart = Transcript.start..bp., 
-         geneEnd = Transcript.end..bp., 
-         chromosome = Chromosome.scaffold.name)
-
+genes.fpkm <- helper.get.diff.fpkm()
+genes.anno <- helper.get.diff.anno()
 
 multicor <- function(data, method= c('pearson', 'kendall', 'spearman'), rds=NA, rewrite=FALSE, verbose=TRUE) {
   # Data structure like this:
@@ -73,9 +62,7 @@ multicor <- function(data, method= c('pearson', 'kendall', 'spearman'), rds=NA, 
   ret
 }
 
-cor.pairs <- multicor(genes.fpkm, rds = './cache/test.rds')
-
-
+cor.pairs <- multicor(genes.fpkm, rds = './cache/cor.pearson.pairs.rds')
 
 annoPairs <- function(cor.pairs, annotation) {
   g1 <- annotation[match(cor.pairs$v1, annotation$GeneID),]
