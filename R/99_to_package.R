@@ -1,8 +1,8 @@
 library(devtools)
 library(roxygen2)
-library(testthat)
+# library(testthat)
 package.path <- './package/x2y'
-create(package.path)
+# create(package.path)
 
 roxygenize(package.path)
 load_all(package.path)
