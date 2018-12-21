@@ -6,9 +6,10 @@ cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
 biomart <- helper.get.biomart()
 
 
+cor.lnc2all <- filter(cor.pairs.info, type1%in%config$lncRNA, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
 
-cor.lnc2all <- cor.pairs.info %>% filter(abs(r)>0.3,FDR<0.05) %>% filter(type1%in%config$lncRNA)
 
+###################################### plot
 get.granges <- function(lnc) {
     loc <- biomart[match(unique(lnc$v2),biomart$Gene.stable.ID),]%>%
         select(chr=Chromosome.scaffold.name, start=Gene.start..bp., end=Gene.end..bp.)%>%
@@ -40,24 +41,77 @@ plot.location <- function(lnc, main='',file.name='',out.dir='./', save=TRUE) {
 
 plot.location(cor.lnc2all, save = FALSE)
 
-lnc.split <- split(cor.lnc2all,as.vector(cor.lnc2all$v1))
-tmp<-lapply(seq_along(lnc.split),function(i){
+
+################################### plot.lnc.split
+plot.lnc.split <- function(lnc.split, outdir='./reports/grange/all') {
+  n.na <- n.nuclear <- n.cytoplasmic <- 0
+  lapply(seq_along(lnc.split),function(i){
     lnc.name <- names(lnc.split)[[i]]
     rci <- helper.get.cell.localization()[lnc.name,]$rci
-    outdir <- './reports/grange/'
     if (is.na(rci)) {
-      outdir <- paste0(outdir,'na')
+      n.na <<- n.na + 1
+      outdir <- file.path(outdir,'na')
     }else if (rci <0) {
-      outdir <- paste0(outdir,'nuclear')
+      n.nuclear <<- n.nuclear + 1
+      outdir <- file.path(outdir,'nuclear')
     } else {
-      outdir <- paste0(outdir,'cytoplasmic')
+      n.cytoplasmic <<- n.cytoplasmic + 1
+      outdir <- file.path(outdir,'cytoplasmic')
+    }
+    if (!file.exists(outdir)) {
+      dir.create(outdir, recursive = TRUE)
     }
     main <- paste(lnc.name, rci)
-    print(i)
     plot.location(lnc.split[[i]], main=main, file.name = lnc.name,out.dir=outdir)
-})
+  })->tmp
+  message(paste0('Nuclear: ', n.nuclear, "; Cytoplasmic: ", n.cytoplasmic, "; NA: ", n.na))
+}
 
 
+
+######################################### lnc.split & Filtered
+
+lnc.split <- split(cor.lnc2all,as.vector(cor.lnc2all$v1))
+
+
+sapply(seq_along(lnc.split),function(i){
+  lnc.name <- names(lnc.split)[[i]]
+  rci <- helper.get.cell.localization()[lnc.name,]$rci
+  n <- nrow(lnc.split[[i]])
+  r <- lnc.split[[i]]$r
+  ratio <- sum(r>0)/length(r)
+
+  c(lnc.name, rci, n, ratio,mean(r),sd(r))
+})->lnc.m
+lnc.summary <- data.frame(name=lnc.m[1,],
+                          rci=as.numeric(lnc.m[2,]),
+                          n=as.numeric(lnc.m[3,]),
+                          p.ratio=as.numeric(lnc.m[4,]),
+                          mean=as.numeric(lnc.m[5,]),
+                          sd=as.numeric(lnc.m[6,]),
+                          stringsAsFactors = F)
+
+par(mfrow=c(2,3))
+boxplot(sort(lnc.summary$rci), ylab='NC RCI')
+boxplot(sort(lnc.summary$n), ylab='PCG Number')
+boxplot(sort(lnc.summary$p.ratio), ylab='Positive Corralation Ratio')
+boxplot(sort(lnc.summary$mean), ylab='r Mean')
+boxplot(sort(lnc.summary$sd), ylab='r SD')
+par(mfrow=c(1,1))
+
+n.cutoff <- quantile(lnc.summary$n, 0.75)
+sd.cutoff <- quantile(lnc.summary$sd, 0.5,na.rm=TRUE)
+pr.cutoff1 <- quantile(lnc.summary$p.ratio, 0.1)
+pr.cutoff2 <- quantile(lnc.summary$p.ratio, 0.5)
+
+
+lnc.filtered <- filter(lnc.summary, n > n.cutoff, p.ratio < pr.cutoff1|p.ratio >= pr.cutoff2)
+
+lnc.split.filtered <- lnc.split[lnc.filtered$name]
+
+plot.lnc.split(lnc.split.filtered, outdir = "./reports/grange/filtered")
+
+###########################################################################################
 ####################################
 gr1 <- GRanges(
   seqnames = "chr2",

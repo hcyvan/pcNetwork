@@ -148,6 +148,11 @@ lncRNA2TF.parse<- function(lncRNA.tf.fimo.s, l.s=0.5) {
     detail.inter <- lapply(split(lncRNA.tf, seq(nrow(lncRNA.tf))), function(x){
       get.intersect.pcg(x$a,x$b,l.s)
     })
+    print(lncRNA.tf$a)
+    detail.lncRNA <- lapply(split(lncRNA.tf, lncRNA.tf$a), function(x){
+      print(x)
+      stop()
+    })
     names(detail.inter)<-str_c(lncRNA.tf$a, lncRNA.tf$b, sep = '-')
     pcg <- Reduce(union, detail.inter)
   }
@@ -164,6 +169,69 @@ lncRNA2TF.parse<- function(lncRNA.tf.fimo.s, l.s=0.5) {
   class(result) <- 'lncTP'
   result
 }
+lncTP.0.3 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.3, 0.3)
+
+
+
+
+
+
+
+lncRNA.tf.fimo.s <- lncRNA.tf.fimo.0.3
+l.s <- 0.3
+
+
+
+lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(FDR<0.05, phi>0, c11+c10>(c11+c10+c1+c0)/10)
+
+tf <- sort(unique(as.vector(lncRNA.tf$b)))
+lncRNA <- unique(as.vector(lncRNA.tf$a))
+detail.inter <- lapply(split(lncRNA.tf, seq(nrow(lncRNA.tf))), function(x){
+  get.intersect.pcg(x$a,x$b,l.s)
+})
+print(lncRNA.tf$a)
+detail.lncRNA <- lapply(split(lncRNA.tf, as.vector(lncRNA.tf$a)), function(x){
+  pcgs <- sapply(split(x, seq(nrow(x))), function(y){
+    get.intersect.pcg(y$a,y$b,l.s)->aa
+    str(aa)
+    stop()
+  })
+  print(pcgs)
+  unique(pcgs)
+  print(pcgs)
+  stop()
+})
+names(detail.inter)<-str_c(lncRNA.tf$a, lncRNA.tf$b, sep = '-')
+pcg <- Reduce(union, detail.inter)
+
+index <- match(lncRNA.tf$a, biomart.symbol.biotype$ensembl_gene_id)
+symbols <- biomart.symbol.biotype[index,]$hgnc_symbol
+lncRNA.tf <- data.frame(lncRNA.tf, symbol=symbols)
+result =list(
+  detail=lncRNA.tf,
+  detail.inter=detail.inter,
+  tf=tf,
+  lncRNA=lncRNA,
+  pcg=pcg
+)
+class(result) <- 'lncTP'
+result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 print.lncTP <- function(ltp){
   cat('lncRNA', 'tf', 'pcg','lncRNA-tf', sep = '\t');cat('\n')
