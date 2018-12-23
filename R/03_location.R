@@ -1,6 +1,6 @@
-source('./lib/globals.R')
-source('./lib/helpers.R')
-library(karyoploteR)
+suppressPackageStartupMessages(source('./lib/globals.R'))
+suppressPackageStartupMessages(source('./lib/helpers.R'))
+suppressPackageStartupMessages(library(karyoploteR))
 
 cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
 biomart <- helper.get.biomart()
@@ -106,9 +106,25 @@ pr.cutoff2 <- quantile(lnc.summary$p.ratio, 0.5)
 
 
 lnc.filtered <- filter(lnc.summary, n > n.cutoff, p.ratio < pr.cutoff1|p.ratio >= pr.cutoff2)
+###########################################################################
+p.ratio.tag <- ifelse(lnc.filtered$p.ratio > 0.5, 'positive', 'negative')
+rci.tag<-c()
+for (x in lnc.filtered$rci) {
+  if (is.na(x)) {
+    tag <- 'no'
+  }
+  else if (x < 0) {
+    tag <- 'nuclear'
+  }
+  else {
+    tag <- 'cytoplasmic'
+  }
+  rci.tag <- c(rci.tag, tag)
+}
+lnc.filtered.table <- table(rci.tag, p.ratio.tag)
+###############################################################################
 
 lnc.split.filtered <- lnc.split[lnc.filtered$name]
-
 plot.lnc.split(lnc.split.filtered, outdir = "./reports/grange/filtered")
 
 ###########################################################################################

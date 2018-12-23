@@ -65,21 +65,7 @@ plot.tf.2.PCG <- function() {
 #############################################################
 devtools::load_all('./package/x2y/')
 
-lncRNA.2.PCG <- get.lncRNA.2.PCG(0.3)
-tf.2.PCG <- get.tf.2.PCG.from.fimo()
-
-tf.2.PCG.m <- x2yMatrix(tf.2.PCG)
-lncRNA.2.PCG.m <- x2yMatrix(lncRNA.2.PCG)
-
-fix <- x2yMatrixAdjust(lncRNA.2.PCG.m, tf.2.PCG.m, y.names = pcg$GeneType) 
-
-dim(fix$a)
-dim(fix$b)
-# heatmap(fix$a[,sample(ncol(fix$a), 50)])
-# heatmap(fix$b[,sample(ncol(fix$b), 50)])
-
-
-lncTF.all <- function(s=0, tf='enricher') {
+getFix <- function(s=0, tf='fimo') {
   if (tf=='enricher') {
     tf.2.PCG <- get.tf.2.PCG.from.enricher()
   } else {
@@ -89,23 +75,28 @@ lncTF.all <- function(s=0, tf='enricher') {
   
   lncRNA.2.PCG.m <- x2yMatrix(lncRNA.2.PCG)
   tf.2.PCG.m <- x2yMatrix(tf.2.PCG)
-  fix <- x2yMatrixAdjust(lncRNA.2.PCG.m, tf.2.PCG.m,y.names = pcg$GeneID) 
-  
+  fix <- x2yMatrixAdjust(lncRNA.2.PCG.m, tf.2.PCG.m,y.names = pcg$GeneID)
+  fix
+}
+
+
+lncTF.all <- function(s=0) {
+  fix <- getFix(s)
   message(paste('Calculate Phi of',ncol(fix$a), 'lncRNA and', ncol(fix$b),'TF'))
   lncRNA.tf.list <- xyCor(fix$a, fix$b)
   write.csv(lncRNA.tf.list, file = paste0('./data/lncRNA.tf.list/lncRNA.tf.',tf,'.',s,'.csv'))
   lncRNA.tf.list
 }
 
-# system.time(lncRNA.tf.fimo.0.1 <- lncTF.all(0.1, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.2 <- lncTF.all(0.2, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.3 <- lncTF.all(0.3, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.4 <- lncTF.all(0.4, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.5 <- lncTF.all(0.5, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.6 <- lncTF.all(0.6, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.7 <- lncTF.all(0.7, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.8 <- lncTF.all(0.8, tf='fimo'))
-# system.time(lncRNA.tf.fimo.0.9 <- lncTF.all(0.9, tf='fimo'))
+# system.time(lncRNA.tf.fimo.0.1 <- lncTF.all(0.1))
+# system.time(lncRNA.tf.fimo.0.2 <- lncTF.all(0.2))
+# system.time(lncRNA.tf.fimo.0.3 <- lncTF.all(0.3))
+# system.time(lncRNA.tf.fimo.0.4 <- lncTF.all(0.4))
+# system.time(lncRNA.tf.fimo.0.5 <- lncTF.all(0.5))
+# system.time(lncRNA.tf.fimo.0.6 <- lncTF.all(0.6))
+# system.time(lncRNA.tf.fimo.0.7 <- lncTF.all(0.7))
+# system.time(lncRNA.tf.fimo.0.8 <- lncTF.all(0.8))
+# system.time(lncRNA.tf.fimo.0.9 <- lncTF.all(0.9))
 
 # save(lncRNA.tf.fimo.0.1,
 #      lncRNA.tf.fimo.0.2,
@@ -119,135 +110,30 @@ lncTF.all <- function(s=0, tf='enricher') {
 #      file = './cache/lncRNA.tf.fimo.x.rda'
 #      )
 
+############################################################
 load(file = './cache/lncRNA.tf.fimo.x.rda')
 
-
-#################################################
-get.tf.pcgs <- function(tf) {
-  get.tf.2.PCG.from.fimo()[[tf]]
-}
-get.lncRNA.pcgs <- function(lncRNA, l.s) {
-  get.lncRNA.2.PCG(l.s)[[lncRNA]]
-}
-get.intersect.pcg <- function(lncRNA, tf, l.s){
-  intersect(get.lncRNA.2.PCG(l.s)[[lncRNA]], get.tf.2.PCG.from.fimo()[[tf]])
-}
-
-############################################################ parse
-load('./cache/biomart.symbol.biotype.rda')
-lncRNA2TF.parse<- function(lncRNA.tf.fimo.s, l.s=0.5) {
-  lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(FDR<0.05, phi>0, c11+c10>(c11+c10+c1+c0)/10)
-  if (nrow(lncRNA.tf)==0) {
-    tf=vector()
-    lncRNA=vector()
-    detail.inter=list()
-    pcg=vector()
-  } else {
-    tf <- sort(unique(as.vector(lncRNA.tf$b)))
-    lncRNA <- unique(as.vector(lncRNA.tf$a))
-    detail.inter <- lapply(split(lncRNA.tf, seq(nrow(lncRNA.tf))), function(x){
-      get.intersect.pcg(x$a,x$b,l.s)
-    })
-    print(lncRNA.tf$a)
-    detail.lncRNA <- lapply(split(lncRNA.tf, lncRNA.tf$a), function(x){
-      print(x)
-      stop()
-    })
-    names(detail.inter)<-str_c(lncRNA.tf$a, lncRNA.tf$b, sep = '-')
-    pcg <- Reduce(union, detail.inter)
-  }
-  index <- match(lncRNA.tf$a, biomart.symbol.biotype$ensembl_gene_id)
-  symbols <- biomart.symbol.biotype[index,]$hgnc_symbol
-  lncRNA.tf <- data.frame(lncRNA.tf, symbol=symbols)
-  result =list(
-    detail=lncRNA.tf,
-    detail.inter=detail.inter,
-    tf=tf,
-    lncRNA=lncRNA,
-    pcg=pcg
-  )
-  class(result) <- 'lncTP'
-  result
-}
-lncTP.0.3 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.3, 0.3)
+fix1 <- getFix(0.1)
+fix2 <- getFix(0.2)
+fix3 <- getFix(0.3)
+fix4 <- getFix(0.4)
+fix5 <- getFix(0.5)
+fix6 <- getFix(0.6)
+fix7 <- getFix(0.7)
+fix8 <- getFix(0.8)
+fix9 <- getFix(0.9)
 
 
+lncTP.0.1 <- new('XY2Z', raw=lncRNA.tf.fimo.0.1, x=fix1$a, y=fix1$b)
+lncTP.0.2 <- new('XY2Z', raw=lncRNA.tf.fimo.0.2, x=fix2$a, y=fix2$b)
+lncTP.0.3 <- new('XY2Z', raw=lncRNA.tf.fimo.0.3, x=fix3$a, y=fix3$b)
+lncTP.0.4 <- new('XY2Z', raw=lncRNA.tf.fimo.0.4, x=fix4$a, y=fix4$b)
+lncTP.0.5 <- new('XY2Z', raw=lncRNA.tf.fimo.0.5, x=fix5$a, y=fix5$b)
+lncTP.0.6 <- new('XY2Z', raw=lncRNA.tf.fimo.0.6, x=fix6$a, y=fix6$b)
+lncTP.0.7 <- new('XY2Z', raw=lncRNA.tf.fimo.0.7, x=fix7$a, y=fix7$b)
+lncTP.0.8 <- new('XY2Z', raw=lncRNA.tf.fimo.0.8, x=fix8$a, y=fix8$b)
+lncTP.0.9 <- new('XY2Z', raw=lncRNA.tf.fimo.0.9, x=fix9$a, y=fix9$b)
 
-
-
-
-
-lncRNA.tf.fimo.s <- lncRNA.tf.fimo.0.3
-l.s <- 0.3
-
-
-
-lncRNA.tf <- lncRNA.tf.fimo.s%>%filter(FDR<0.05, phi>0, c11+c10>(c11+c10+c1+c0)/10)
-
-tf <- sort(unique(as.vector(lncRNA.tf$b)))
-lncRNA <- unique(as.vector(lncRNA.tf$a))
-detail.inter <- lapply(split(lncRNA.tf, seq(nrow(lncRNA.tf))), function(x){
-  get.intersect.pcg(x$a,x$b,l.s)
-})
-print(lncRNA.tf$a)
-detail.lncRNA <- lapply(split(lncRNA.tf, as.vector(lncRNA.tf$a)), function(x){
-  pcgs <- sapply(split(x, seq(nrow(x))), function(y){
-    get.intersect.pcg(y$a,y$b,l.s)->aa
-    str(aa)
-    stop()
-  })
-  print(pcgs)
-  unique(pcgs)
-  print(pcgs)
-  stop()
-})
-names(detail.inter)<-str_c(lncRNA.tf$a, lncRNA.tf$b, sep = '-')
-pcg <- Reduce(union, detail.inter)
-
-index <- match(lncRNA.tf$a, biomart.symbol.biotype$ensembl_gene_id)
-symbols <- biomart.symbol.biotype[index,]$hgnc_symbol
-lncRNA.tf <- data.frame(lncRNA.tf, symbol=symbols)
-result =list(
-  detail=lncRNA.tf,
-  detail.inter=detail.inter,
-  tf=tf,
-  lncRNA=lncRNA,
-  pcg=pcg
-)
-class(result) <- 'lncTP'
-result
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-print.lncTP <- function(ltp){
-  cat('lncRNA', 'tf', 'pcg','lncRNA-tf', sep = '\t');cat('\n')
-  cat(length(ltp$lncRNA), length(ltp$tf), length(ltp$pcg),nrow(ltp$detail), sep = '\t');cat('\n')
-}
-
-
-lncTP.0.9 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.9, 0.9)
-lncTP.0.8 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.8, 0.8)
-lncTP.0.7 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.7, 0.7)
-lncTP.0.6 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.6, 0.6)
-lncTP.0.5 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.5, 0.5)
-lncTP.0.4 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.4, 0.4)
-lncTP.0.3 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.3, 0.3)
-lncTP.0.2 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.2, 0.2)
-lncTP.0.1 <- lncRNA2TF.parse(lncRNA.tf.fimo.0.1, 0.1)
 
 save(lncTP.0.1, lncTP.0.2, lncTP.0.3, lncTP.0.4, lncTP.0.5, lncTP.0.6, lncTP.0.7, lncTP.0.8, lncTP.0.9, file = './cache/lncTP.0.x.rda')
 load('./cache/lncTP.0.x.rda')
@@ -268,17 +154,17 @@ for(s in seq(0.1,0.9,0.1)) {
   lnctp <- get(paste0('lncTP.',s))
   cat('---------------------------',s,'----------------------------------------');cat('\n')
   print(lnctp)
-  print(sort(lnctp$tf))
-  print(ncol(lnctp$detail))
-  if (nrow(lnctp$detail) > 0) {
-    barplot(sort(lnctp$detail$c11), main=s)
+  print(sort(lnctp@nodes$y))
+  print(ncol(lnctp@detail))
+  if (nrow(lnctp@detail) > 0) {
+    barplot(sort(lnctp@detail$c11), main=s)
   }
 }
 
 
-write.csv(lncTP.0.3$tf, './data/lnctp.tf.csv')
-write.csv(lncTP.0.3$lncRNA, './data/lnctp.lncRNA.csv')
-write.csv(lncTP.0.3$detail, './data/lnctp.detail.csv')
+write.csv(lncTP.0.3@nodes$y, './data/lnctp.tf.csv')
+write.csv(lncTP.0.3@nodes$x, './data/lnctp.lncRNA.csv')
+write.csv(lncTP.0.3@detail, './data/lnctp.detail.csv')
 
 
 
