@@ -49,14 +49,34 @@ setMethod("getZByX", 'XY2Z', function(object) {
   })
 })
 ##-----------------------------------
+setGeneric('getYZByX', def=function(object) {
+    standardGeneric("getYZByX")
+})
+setMethod("getYZByX", 'XY2Z', function(object) {
+    lapply(split(object@detail,as.vector(object@detail$a)), function(xys){
+        z <- unique(Reduce(union, lapply(split(xys,seq(nrow(xys))), function(xy){
+            contingency <- object@x[,xy$a]*10+object@y[,xy$b]
+            rownames(object@x)[contingency==11]
+        })))
+        y <- sapply(split(xys, seq(nrow(xys))), function(xy){
+            xy$b
+        })
+        list(z,y)
+    })
+})
+##-----------------------------------
 setGeneric('getZByXY', def=function(object) {
   standardGeneric("getZByXY")
 })
 setMethod("getZByXY", 'XY2Z', function(object) {
-  lapply(split(object@detail,seq(nrow(object@detail))), function(xy){
+  z <- lapply(split(object@detail,seq(nrow(object@detail))), function(xy){
     contingency <- object@x[,xy$a]*10+object@y[,xy$b]
     rownames(object@x)[contingency==11]
   })
+  names(z) <- sapply(split(object@detail, seq(nrow(object@detail))), function(xy){
+      paste0(xy$a, '-', xy$b)
+  })
+  z
 })
 ##-------------------------------------
 setMethod("initialize", "XY2Z", function(.Object,...){

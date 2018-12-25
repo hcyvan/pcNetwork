@@ -165,33 +165,3 @@ for(s in seq(0.1,0.9,0.1)) {
 write.csv(lncTP.0.3@nodes$y, './data/lnctp.tf.csv')
 write.csv(lncTP.0.3@nodes$x, './data/lnctp.lncRNA.csv')
 write.csv(lncTP.0.3@detail, './data/lnctp.detail.csv')
-
-
-
-##############################################
-## tf in pcgs
-pcg.all.id <- Reduce(union, lncTP.0.3$detail.inter)
-pcg.all.symbol <- biomart.symbol.biotype[match(pcg.all.id, biomart.symbol.biotype$ensembl_gene_id),'hgnc_symbol']
-intersect(pcg.all.symbol, lncTP.0.3$tf)
-
-## demo
-lncTP.0.3$detail%>%filter(tf=='AR')
-length(get.tf.pcgs('AR'))
-length(get.lncRNA.pcgs('ENSG00000237476',0.3))
-
-
-
-get.tf.2.PCG.from.fimo()->tf.2.PCG
-get.tf.2.PCG.from.enricher()->tf.2.PCG.2
-
-barplot(sapply(tf.2.PCG, function(x){length(x)})%>%sort())
-names(tf.2.PCG)%>%sort()->fimo
-barplot(sapply(tf.2.PCG.2, function(x){length(x)})%>%sort())
-names(tf.2.PCG.2)%>%sort()
-
-lncRNA.2.PCG <- get.lncRNA.2.PCG(0.5)
-
-barplot(sapply(lncRNA.2.PCG, function(x){length(x)})%>%sort())
-
-starbase <- read.delim('./data/lncRNA_rbp.txt',stringsAsFactors = F)
-starbase$RBP%>%unique()

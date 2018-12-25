@@ -1,13 +1,11 @@
 suppressPackageStartupMessages(source('./lib/globals.R'))
 suppressPackageStartupMessages(source('./lib/helpers.R'))
 suppressPackageStartupMessages(library(karyoploteR))
+load_all('./package/x2y/')
 
 cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
 biomart <- helper.get.biomart()
-
-
 cor.lnc2all <- filter(cor.pairs.info, type1%in%config$lncRNA, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
-
 
 ###################################### plot
 get.granges <- function(lnc) {
@@ -21,12 +19,12 @@ get.granges <- function(lnc) {
 plot.location <- function(lnc, main='',file.name='',out.dir='./', save=TRUE) {
     colors <- ifelse(lnc$r>0,'red','green')
     grange <- get.granges(lnc)
-  
+
     plot.type <- 1
     pp <- getDefaultPlotParams(plot.type = plot.type)
     pp$data1height=500
     pp$leftmargin <- 0.04
-    
+
     if (save) {
       tiff(file.path(out.dir,paste0(ifelse(file.name=='',main, file.name),'.tif')),width=1200, height=800)
     }
@@ -38,9 +36,6 @@ plot.location <- function(lnc, main='',file.name='',out.dir='./', save=TRUE) {
       dev.off()
     }
 }
-
-plot.location(cor.lnc2all, save = FALSE)
-
 
 ################################### plot.lnc.split
 plot.lnc.split <- function(lnc.split, outdir='./reports/grange/all') {
@@ -70,22 +65,24 @@ plot.lnc.split <- function(lnc.split, outdir='./reports/grange/all') {
 
 
 ######################################### lnc.split & Filtered
-
 lnc.split <- split(cor.lnc2all,as.vector(cor.lnc2all$v1))
 
-
+load('./cache/lncTP.0.x.rda')
+lncTP.pcgs <- getZByX(lncTP.0.3)
 sapply(seq_along(lnc.split),function(i){
   lnc.name <- names(lnc.split)[[i]]
   rci <- helper.get.cell.localization()[lnc.name,]$rci
   n <- nrow(lnc.split[[i]])
   r <- lnc.split[[i]]$r
-  ratio <- sum(r>0)/length(r)
+  ratio <- sum(r>0)/n
+  tf.ratio <-length(intersect(lncTP.pcgs[[lnc.name]], lnc.split[[i]]$v2))/n
 
-  c(lnc.name, rci, n, ratio,mean(r),sd(r))
+  c(lnc.name, rci, n, ratio,mean(r),sd(r),tf.ratio)
 })->lnc.m
 lnc.summary <- data.frame(name=lnc.m[1,],
                           rci=as.numeric(lnc.m[2,]),
                           n=as.numeric(lnc.m[3,]),
+                          tf.ratio=as.numeric(lnc.m[7,]),
                           p.ratio=as.numeric(lnc.m[4,]),
                           mean=as.numeric(lnc.m[5,]),
                           sd=as.numeric(lnc.m[6,]),
@@ -106,6 +103,10 @@ pr.cutoff2 <- quantile(lnc.summary$p.ratio, 0.5)
 
 
 lnc.filtered <- filter(lnc.summary, n > n.cutoff, p.ratio < pr.cutoff1|p.ratio >= pr.cutoff2)
+lnc.filtered$name
+lncTP.0.3@nodes$x
+intersect(lnc.filtered$name, lncTP.0.3@nodes$x)
+
 ###########################################################################
 p.ratio.tag <- ifelse(lnc.filtered$p.ratio > 0.5, 'positive', 'negative')
 rci.tag<-c()
@@ -122,11 +123,70 @@ for (x in lnc.filtered$rci) {
   rci.tag <- c(rci.tag, tag)
 }
 lnc.filtered.table <- table(rci.tag, p.ratio.tag)
-###############################################################################
+lnc.filtered.table
 
+###
+par(mfrow=c(2,3))
+barplot(sort(lnc.filtered$tf.ratio), main = 'Total')
+barplot(sort(filter(lnc.filtered,rci <0)$tf.ratio), main = 'nuclear')
+barplot(sort(filter(lnc.filtered,rci >0)$tf.ratio), main = 'cytoplasmic')
+barplot(sort(filter(lnc.filtered,p.ratio > 0.5)$tf.ratio), main = 'positive')
+barplot(sort(filter(lnc.filtered,p.ratio < 0.5)$tf.ratio), main = 'negative')
+par(mfrow=c(1,1))
+
+##
+lnc.candidate <- filter(lnc.filtered,rci<0, tf.ratio>0)
+saveRDS(lnc.candidate, file='./cache/lnc.candidate.location.rds') # <== This is Candidate
+surv <- readRDS(file='./cache/candidate.surv.rds')
+lnc.tfpcg <- getYZByX(lncTP.0.3)
+
+################################################################### <-------------- This is used to pick up
+for (ca in lnc.candidate$name) {
+    fd.km.lnc <- ifelse(ca%in%surv$fd.km$lncRNA,1,0)
+    fd.km.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$fd.km$pcg))/length(lnc.tfpcg[[ca]][[1]])
+    o.km.lnc <- ifelse(ca%in%surv$o.km$lncRNA,1,0)
+    o.km.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$o.km$pcg))/length(lnc.tfpcg[[ca]][[1]])
+    fd.cox.lnc <- ifelse(ca%in%surv$fd.cox$lncRNA,1,0)
+    fd.cox.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$fd.cox$pcg))/length(lnc.tfpcg[[ca]][[1]])
+    o.cox.lnc <- ifelse(ca%in%surv$o.cox$lncRNA,1,0)
+    o.cox.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$o.cox$pcg))/length(lnc.tfpcg[[ca]][[1]])
+    print(ca)
+    print(c(fd.km.lnc, fd.km.pcg, o.km.lnc, o.km.pcg))
+    print(c(fd.cox.lnc, fd.cox.pcg, o.cox.lnc, o.cox.pcg))
+}
+
+
+###############################################################################
 lnc.split.filtered <- lnc.split[lnc.filtered$name]
 plot.lnc.split(lnc.split.filtered, outdir = "./reports/grange/filtered")
 
+plot.location <- function(lnc, main='',file.name='',out.dir='./', save=TRUE) {
+  colors <- ifelse(lnc$r>0,'red','green')
+  grange <- get.granges(lnc)
+
+  plot.type <- 1
+  pp <- getDefaultPlotParams(plot.type = plot.type)
+  pp$data1height=500
+  pp$leftmargin <- 0.04
+
+  if (save) {
+    tiff(file.path(out.dir,paste0(ifelse(file.name=='',main, file.name),'.tif')),width=1200, height=800)
+  }
+  kp <- plotKaryotype(genome = 'hg38', plot.type=plot.type, plot.params = pp,cex=1, main=main)
+  kpDataBackground(kp, color = "#FFFFFFAA")
+  kpPlotDensity(kp, grange, col="#3388FF55", border="#3388FF")
+  kpPlotRegions(kp, data=grange, col=colors)
+  if (save) {
+    dev.off()
+  }
+}
+
+plot.location(lnc.split.filtered[[1]], save = FALSE)
+
+
+###########################################################################################
+###########################################################################################
+###########################################################################################
 ###########################################################################################
 ####################################
 gr1 <- GRanges(
@@ -196,9 +256,7 @@ cor.pairs$
   BiocManager::install("TxDb.Hsapiens.UCSC.hg38.knownGene", version = "3.8")
   ########################################################
    library(karyoploteR)
-  
+
   kp <- plotKaryotype(genome = 'hg38', chromosomes=c("chr10", "chr12", "chr2"))
   kpAddBaseNumbers(kp)
   regions <- createRandomRegions(nregions=400, length.mean = 3e6, mask=NA,genome='hg38')
-  
-  
