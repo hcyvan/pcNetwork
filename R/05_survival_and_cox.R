@@ -58,11 +58,11 @@ getDataSurv <- function(clinical, gene='', event='death') {
         mutate(x.median=ifelse(fpkm>median(fpkm), 'high', 'low'))
 }
 ################################################################### Plot
-draw.barplot.survival <- function(gene, symbol='') {
+draw.barplot.survival <- function(gene, symbol='', outdir='./reports/candidate/') {
     final<-data.frame(fpkm.anno, fpkm=fpkm[,gene], stringsAsFactors = F)
 
     data.surv1 <- getDataSurv(clinical1, gene=gene, event='new_tumor')
-    data.surv2 <- getDataSurv(clinical2.fix, gene=gene, event='death')
+    data.surv2 <- getDataSurv(clinical2, gene=gene, event='death')
     km.dfs.media <- survfit(Surv(time, status) ~ x.median, data=data.surv1)
     km.os.media <- survfit(Surv(time, status) ~ x.median, data=data.surv2)
     ## plot
@@ -92,18 +92,25 @@ draw.barplot.survival <- function(gene, symbol='') {
     p3 <- ggsurvplot(km.dfs.media, xlab='Disease Free Survival Probability', ylab=element_blank())$plot
     p4 <- ggsurvplot(km.os.media, xlab='Overall Survival Probability', ylab=element_blank())$plot
     p.all <- plot_grid(p1, p2, p3, p4, ncol = 2, labels=c('A', 'B', 'C', 'D'))
-    pic.name=paste0('./reports/survplot/',ifelse(symbol=='', gene, symbol), '.jpg')
+    pic.name=paste0(outdir, ifelse(symbol=='', gene, symbol), '.jpg')
     ggsave(p.all, file=pic.name, width = 10, height = 8)
 }
-# genes <- helper.get.lncRNA.PCG()
-# i<-0
-# lapply(split(genes, seq(nrow(genes))), function(x){
-#   print(i)
-#   i<<-i+1
-#   draw.barplot.survival(gene = x$GeneID, symbol = x$symbol)
-# })->tmp
 
-#################################################################################### Univariate Regression
+load('./cache/lncTP.0.x.rda')
+genes <- helper.get.candidate()
+genes <- genes%>%filter(fd.p<0.05|fd.p.m<0.05|o.p<0.05|o.p.m<0.05|fd.cox.p<0.05|o.cox.p<0.05) # <========================= This is the final result!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#genes <- helper.get.lncRNA.PCG()
+i<-0
+lapply(split(genes, seq(nrow(genes))), function(x){
+    print(i)
+    i<<-i+1
+    #lncTP.filterd<-filterByX(lncTP.0.3, x$GeneID)
+    #print(lncTP.filterd)
+    #print(x)
+    draw.barplot.survival(gene = x$GeneID, symbol = x$symbol)
+})->tmp
+
+################################################ Univariate Regression
 survDiffGene <- function(gene) {
     data.surv1 <- getDataSurv(clinical1, gene=gene, event='new_tumor')
     data.surv2 <- getDataSurv(clinical2, gene=gene, event='death')

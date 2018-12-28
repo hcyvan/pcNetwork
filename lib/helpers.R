@@ -2,8 +2,36 @@ library(stringr)
 library(dplyr)
 source('./lib/lib.R')
 
+helper.get.surv <- function() {
+    surv <- read.csv('./reports/surv.p.data.csv')
+    surv
+}
+helper.get.candidate <- function() {
+    genes <- helper.get.lncRNA.PCG()
+    surv <- helper.get.surv()
+    surv$gene <- as.vector(surv$gene)
+    candidate <- readRDS(file='./cache/lnc.candidate.location.rds')
+    candidate <- left_join(candidate, genes, by=c('name'='GeneID')) %>%
+        left_join(surv, by=c('name'='gene')) %>%
+        select(GeneID=name,
+               symbol=symbol.x,
+               GeneType, rci, n, tf.ratio, p.ratio, logFC,
+               fd.p=fds.median,
+               fd.p.m=fds.mean,
+               o.p=os.median,
+               o.p.m=os.mean,
+               fd.cox.p=fd.cox.p.value,
+               o.cox.p=o.cox.p.value)
+    rownames(candidate) <- candidate$GeneID
+    candidate
+}
+
 helper.get.data.count <- function() {
-  data.count <- read.delim('./data/data.count.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
+    data.count <- read.delim('./data/data.count.csv',
+                             sep = ',',
+                             header = TRUE,
+                             stringsAsFactors = FALSE,
+                             row.names = 'GeneID')
   rownames(data.count) <- str_split_fixed(rownames(data.count), '\\.',2)[,1]
   data.count
 }
@@ -14,7 +42,11 @@ helper.get.fpkm <- function(refresh=FALSE) {
   if (file.exists(rds.path)&& !refresh) {
     data.fpkm <- readRDS(rds.path)
   } else {
-    data.fpkm <- read.delim(csv.path, sep = ',', header = TRUE, stringsAsFactors = FALSE, row.names = 'GeneID')
+      data.fpkm <- read.delim(csv.path,
+                              sep = ',',
+                              header = TRUE,
+                              stringsAsFactors = FALSE,
+                              row.names = 'GeneID')
     rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
     saveRDS(data.fpkm, file = rds.path)
   }

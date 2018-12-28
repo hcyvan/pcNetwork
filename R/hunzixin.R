@@ -14,7 +14,7 @@ maxPOutliers <- ifelse(corType=="pearson",1,0.05)
 robustY = ifelse(corType=="pearson",T,F)
 networkType <- 'unsigned'
 
-resultPath <- './reports/huzixin/'
+resultPath <- './reports/huzixin'
 TOMfile <- file.path(resultPath,'tom')
 
 ## -------------------------- Estimate Soft Power -------------------------
@@ -55,6 +55,10 @@ system.time(
                             saveTOMFileBase = TOMfile,
                             verbose = 3)
 )
+
+candidate
+
+
 #load(net$TOMFiles)
 load("./reports/huzixin//tom-block.1.RData") # TOM
 ## -------------------------------------------------------------------------
@@ -67,3 +71,6 @@ plotDendroAndColors(net$dendrograms[[1]], colors[net$blockGenes[[1]]], 'Moudle c
                     addGuide = TRUE,
                     guideHang = 0.05)
 dev.off()
+
+write.csv(labels2colors(net$colors), file=file.path(resultPath,'colors.csv'))
+

@@ -140,22 +140,6 @@ saveRDS(lnc.candidate, file='./cache/lnc.candidate.location.rds') # <== This is 
 surv <- readRDS(file='./cache/candidate.surv.rds')
 lnc.tfpcg <- getYZByX(lncTP.0.3)
 
-################################################################### <-------------- This is used to pick up
-for (ca in lnc.candidate$name) {
-    fd.km.lnc <- ifelse(ca%in%surv$fd.km$lncRNA,1,0)
-    fd.km.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$fd.km$pcg))/length(lnc.tfpcg[[ca]][[1]])
-    o.km.lnc <- ifelse(ca%in%surv$o.km$lncRNA,1,0)
-    o.km.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$o.km$pcg))/length(lnc.tfpcg[[ca]][[1]])
-    fd.cox.lnc <- ifelse(ca%in%surv$fd.cox$lncRNA,1,0)
-    fd.cox.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$fd.cox$pcg))/length(lnc.tfpcg[[ca]][[1]])
-    o.cox.lnc <- ifelse(ca%in%surv$o.cox$lncRNA,1,0)
-    o.cox.pcg <- length(intersect(lnc.tfpcg[[ca]][[1]], surv$o.cox$pcg))/length(lnc.tfpcg[[ca]][[1]])
-    print(ca)
-    print(c(fd.km.lnc, fd.km.pcg, o.km.lnc, o.km.pcg))
-    print(c(fd.cox.lnc, fd.cox.pcg, o.cox.lnc, o.cox.pcg))
-}
-
-
 ###############################################################################
 lnc.split.filtered <- lnc.split[lnc.filtered$name]
 plot.lnc.split(lnc.split.filtered, outdir = "./reports/grange/filtered")

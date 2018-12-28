@@ -53,9 +53,9 @@ plot.tf.2.PCG <- function() {
 # get.tf.2.PCG.from.enricher <- function() {
 #   tf.enricher <- read.delim('./data/enricher.all.bg0.new.csv', sep = ',', stringsAsFactors = F)
 #   tf.enricher.list <- setNames(split(tf.enricher, seq(nrow(tf.enricher))), tf.enricher$detail.ID)
-#   
+#
 #   load('./cache/biomart.symbol.biotype.rda')
-#   
+#
 #   lapply(tf.enricher.list, function(tf){
 #     symbol <- str_split(tf$detail.geneID, '/')[[1]]
 #     filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
@@ -72,7 +72,6 @@ getFix <- function(s=0, tf='fimo') {
     tf.2.PCG <- get.tf.2.PCG.from.fimo()
   }
   lncRNA.2.PCG <- get.lncRNA.2.PCG(s)
-  
   lncRNA.2.PCG.m <- x2yMatrix(lncRNA.2.PCG)
   tf.2.PCG.m <- x2yMatrix(tf.2.PCG)
   fix <- x2yMatrixAdjust(lncRNA.2.PCG.m, tf.2.PCG.m,y.names = pcg$GeneID)

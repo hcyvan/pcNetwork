@@ -79,6 +79,15 @@ setMethod("getZByXY", 'XY2Z', function(object) {
   z
 })
 ##-------------------------------------
+setGeneric('filterByX', def=function(object, x) {
+    standardGeneric("filterByX")
+})
+setMethod("filterByX", signature(object='XY2Z',x='character'), function(object, x) {
+    object@detail <- filter(object@detail, a%in%x)
+    object@nodes <- getNodes(object)
+    object
+})
+##-------------------------------------
 setMethod("initialize", "XY2Z", function(.Object,...){
   .Object <- callNextMethod()
   detail <- .Object@raw%>%filter(FDR<.Object@FDR, phi>0, c11+c10>(c11+c10+c1+c0)/10)
