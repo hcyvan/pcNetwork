@@ -109,7 +109,6 @@ lapply(split(genes, seq(nrow(genes))), function(x){
     #print(x)
     draw.barplot.survival(gene = x$GeneID, symbol = x$symbol)
 })->tmp
-
 ################################################ Univariate Regression
 survDiffGene <- function(gene) {
     data.surv1 <- getDataSurv(clinical1, gene=gene, event='new_tumor')

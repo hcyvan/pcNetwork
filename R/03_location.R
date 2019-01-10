@@ -89,18 +89,17 @@ lnc.summary <- data.frame(name=lnc.m[1,],
                           stringsAsFactors = F)
 
 par(mfrow=c(2,3))
-boxplot(sort(lnc.summary$rci), ylab='NC RCI')
-boxplot(sort(lnc.summary$n), ylab='PCG Number')
-boxplot(sort(lnc.summary$p.ratio), ylab='Positive Corralation Ratio')
-boxplot(sort(lnc.summary$mean), ylab='r Mean')
-boxplot(sort(lnc.summary$sd), ylab='r SD')
+plot(sort(lnc.summary$rci), ylab='NC RCI')
+plot(sort(lnc.summary$n), ylab='PCG Number')
+plot(sort(lnc.summary$p.ratio), ylab='Positive Corralation Ratio')
+plot(sort(lnc.summary$mean), ylab='r Mean')
+plot(sort(lnc.summary$sd), ylab='r SD')
 par(mfrow=c(1,1))
 
 n.cutoff <- quantile(lnc.summary$n, 0.75)
 sd.cutoff <- quantile(lnc.summary$sd, 0.5,na.rm=TRUE)
 pr.cutoff1 <- quantile(lnc.summary$p.ratio, 0.1)
 pr.cutoff2 <- quantile(lnc.summary$p.ratio, 0.5)
-
 
 lnc.filtered <- filter(lnc.summary, n > n.cutoff, p.ratio < pr.cutoff1|p.ratio >= pr.cutoff2)
 lnc.filtered$name
@@ -143,7 +142,7 @@ lnc.tfpcg <- getYZByX(lncTP.0.3)
 ###############################################################################
 lnc.split.filtered <- lnc.split[lnc.filtered$name]
 plot.lnc.split(lnc.split.filtered, outdir = "./reports/grange/filtered")
-
+plot.lnc.split(helper.get.final(),.outdir='./reports/final/chr-location')
 plot.location <- function(lnc, main='',file.name='',out.dir='./', save=TRUE) {
   colors <- ifelse(lnc$r>0,'red','green')
   grange <- get.granges(lnc)

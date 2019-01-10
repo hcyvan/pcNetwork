@@ -10,18 +10,43 @@ biomart <- helper.get.biomart()
 cor.lnc2all <- filter(cor.pairs.info, type1%in%config$lncRNA, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
 
 
-
 load('./cache/lncTP.0.x.rda')
+lnc.tfpcg <- getYZByX(lncTP.0.3)
 candidate <- helper.get.candidate()
 
-cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
-biomart <- helper.get.biomart()
-cor.lnc2all <- filter(cor.pairs.info,
-                      type1%in%config$lncRNA, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
+tfs.tag <- function(lnc) {
+    lnc.tfpcg[[lnc]][[2]]
+}
 
+tfs<-sapply(lnc.tfpcg[candidate$GeneID], function(lnc){
+    paste(sort(lnc[[2]]), collapse='/')
+})
 
+candidate <- data.frame(candidate, tfs=tfs)
+
+final <- select(candidate,
+       GeneID=GeneID,
+       Symbol=symbol,
+       GeneType=GeneType,
+       logFC=logFC,
+       Rci=rci,
+       PcgNumber=n,
+       pRatio=p.ratio,
+       TFs=tfs,
+       DiseaseFreeP.median=fd.p,
+       DiseaseFreeP.mean=fd.p.m,
+       DiseaseFreeP.cox=fd.cox.p,
+       OverallSurvival.median=o.p,
+       OverallSurvival.mean=o.p.m,
+       OverallSurvival.cox=o.cox.p)
+
+saveRDS(final, file = './cache/final.rds')
+
+write.csv(final, file='./reports/final/lncRNA.csv', row.names=F)
+write.csv(lncTP.0.3@detail, file='./reports/final/lncRNA-TF-PCG.csv',row.names=F
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 surv <- readRDS(file='./cache/candidate.surv.rds')
-lnc.tfpcg <- getYZByX(lncTP.0.3)
+
 
 options(digits = 3)
 for (ca in candidate$name) {

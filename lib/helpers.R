@@ -6,6 +6,12 @@ helper.get.surv <- function() {
     surv <- read.csv('./reports/surv.p.data.csv')
     surv
 }
+
+helper.get.final <- function() {
+    surv <- read.csv('./cache/final.rds')
+    surv
+}
+
 helper.get.candidate <- function() {
     genes <- helper.get.lncRNA.PCG()
     surv <- helper.get.surv()
@@ -15,13 +21,19 @@ helper.get.candidate <- function() {
         left_join(surv, by=c('name'='gene')) %>%
         select(GeneID=name,
                symbol=symbol.x,
-               GeneType, rci, n, tf.ratio, p.ratio, logFC,
+               logFC=logFC,
+               GeneType,
+               rci,
+               n,
+               p.ratio,
+               tf.ratio,
                fd.p=fds.median,
                fd.p.m=fds.mean,
                o.p=os.median,
                o.p.m=os.mean,
                fd.cox.p=fd.cox.p.value,
                o.cox.p=o.cox.p.value)
+    candidate<-filter(candidate, fd.p<0.05|fd.p.m<0.05|o.p<0.05|o.p.m<0.05|fd.cox.p<0.05|o.cox.p<0.05) 
     rownames(candidate) <- candidate$GeneID
     candidate
 }
