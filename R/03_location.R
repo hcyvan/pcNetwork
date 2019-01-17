@@ -1,11 +1,30 @@
-suppressPackageStartupMessages(source('./lib/globals.R'))
-suppressPackageStartupMessages(source('./lib/helpers.R'))
-suppressPackageStartupMessages(library(karyoploteR))
+source('./lib/globals.R')
+source('./lib/helpers.R')
+library(karyoploteR)
 load_all('./package/x2y/')
 
 cor.pairs.info <- readRDS('./cache/cor.pairs.info.rds')
 biomart <- helper.get.biomart()
 cor.lnc2all <- filter(cor.pairs.info, type1%in%config$lncRNA, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
+##################
+cor.pcg2all <- filter(cor.pairs.info, type1%in%config$PCGs, type2%in%config$PCGs,FDR<0.05,abs(r)>=0.3)
+pcg.split <- split(cor.lnc2all,as.vector(cor.lnc2all$v1))
+sapply(seq_along(pcg.split),function(i){
+  pcg.name <- names(pcg.split)[[i]]
+  n <- nrow(pcg.split[[i]])
+  r <- lnc.split[[i]]$r
+  ratio <- sum(r>0)/n
+  c(pcg.name, n, ratio,mean(r),sd(r))
+})->pcg.m
+pcg.summary <- data.frame(name=pcg.m[1,],
+                          n=as.numeric(pcg.m[2,]),
+                          p.ratio=as.numeric(pcg.m[3,]),
+                          mean=as.numeric(pcg.m[4,]),
+                          sd=as.numeric(pcg.m[5,]),
+                          stringsAsFactors = F)
+
+
+
 
 ###################################### plot
 get.granges <- function(lnc) {
@@ -87,7 +106,6 @@ lnc.summary <- data.frame(name=lnc.m[1,],
                           mean=as.numeric(lnc.m[5,]),
                           sd=as.numeric(lnc.m[6,]),
                           stringsAsFactors = F)
-
 par(mfrow=c(2,3))
 plot(sort(lnc.summary$rci), ylab='NC RCI')
 plot(sort(lnc.summary$n), ylab='PCG Number')
@@ -95,6 +113,14 @@ plot(sort(lnc.summary$p.ratio), ylab='Positive Corralation Ratio')
 plot(sort(lnc.summary$mean), ylab='r Mean')
 plot(sort(lnc.summary$sd), ylab='r SD')
 par(mfrow=c(1,1))
+
+#--------------------------------------------
+library(ggplot2)
+ggplot(lnc.summary, aes(x=p.ratio)) + geom_histogram(aes(y=..density..), colour="black", fill="white", binwidth = 0.03) + geom_density(alpha=.2, fill="#FF6666")
+ggsave('./reports/lnc-pratio-distribute.png')
+
+ggplot(pcg.summary, aes(x=p.ratio)) + geom_histogram(aes(y=..density..), colour="black", fill="white", binwidth = 0.03) + geom_density(alpha=.2, fill="#009999")
+#-------------------------------------
 
 n.cutoff <- quantile(lnc.summary$n, 0.75)
 sd.cutoff <- quantile(lnc.summary$sd, 0.5,na.rm=TRUE)
@@ -138,6 +164,15 @@ lnc.candidate <- filter(lnc.filtered,rci<0, tf.ratio>0)
 saveRDS(lnc.candidate, file='./cache/lnc.candidate.location.rds') # <== This is Candidate
 surv <- readRDS(file='./cache/candidate.surv.rds')
 lnc.tfpcg <- getYZByX(lncTP.0.3)
+
+tfs.str <- sapply(lnc.tfpcg, function(x){paste0(x[[2]], collapse='/')})
+tfs.n <- sapply(lnc.tfpcg, function(x){length(x[[2]])})
+
+tfs <- data.frame(name=names(tfs.str), tfs.n=tfs.n, tfs=tfs.str)
+
+ret <- left_join(lnc.summary, tfs, by=c('name'='name'))
+
+write.csv(select(ret, lcnRNA=name, rci=rci, pcgNumber=n, pRatio=p.ratio, tfNumber=tfs.n, tfs=tfs), file='./reports/lncRNA641_rci_pratio.csv',row.names=FALSE)
 
 ###############################################################################
 lnc.split.filtered <- lnc.split[lnc.filtered$name]
@@ -186,10 +221,6 @@ gr2 <- GRanges(
 )
 
 grl = GRangesList("txA" = gr1, "txB" = gr2)
-
-
-
-
 ##################################3
 ?table(cor.lnc2all$scaffold2)
 
