@@ -97,21 +97,21 @@ helper.get.diff.anno <- function(refresh=FALSE) {
   genes.anno
 }
 
-helper.get.diff.gene <- function() {
-  read.delim('./data/diff.qlf.csv', sep = ',', stringsAsFactors = FALSE)
-}
-helper.get.lncRNA.PCG <- function() {
-  lncRNA <- read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
-  pcg <- read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
-  rbind(lncRNA, pcg)
-}
-helper.get.PCG <- function() {
-  read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
-}
-helper.get.lncRNA <- function() {
-  read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
-}
-
+#helper.get.diff.gene <- function() {
+#  read.delim('./data/diff.qlf.csv', sep = ',', stringsAsFactors = FALSE)
+#}
+#
+#helper.get.lncRNA.PCG <- function() {
+#  lncRNA <- read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
+#  pcg <- read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
+#  rbind(lncRNA, pcg)
+#}
+#helper.get.PCG <- function() {
+#  read.delim('./data/diff.qlf.pcg.csv', sep = ',', stringsAsFactors = FALSE)
+#}
+#helper.get.lncRNA <- function() {
+#  read.delim('./data/diff.qlf.lncRNA.csv', sep = ',', stringsAsFactors = FALSE)
+#}
 helper.get.cell.localization <- function(id) {
   env = globalenv()
   key='.cell.location'

@@ -44,7 +44,7 @@ get.tf.2.PCG.from.fimo <- function() {
 tf2gene.fimo.gss <- get.tf.2.PCG.from.fimo()
 ### TRUST
 trrust<-fread('./data/trrust_rawdata.human.tsv')
-trrust.set <- trrust[,.(tf=V1,gene=pc.symbol2emsembl(V2))]
+trrust.set <- trrust[,.(tf=V1,gene=pf.symbol2emsembl(V2))]
 trrust.set[,.(.N),by=(tf)]
 saveRDS(as.data.frame(trrust.set), './cache/trrust.set.rds')
 tf2gene.trrust <- tf2gene(trrust.set)
@@ -54,7 +54,7 @@ tf2gene.trrust <- tf2gene(trrust.set)
 gtrd <- fread('./data/Homo_sapiens_meta_clusters.interval', check.names = TRUE)
 gtrd.mid <- gtrd[,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
 
-biomart.set <- as.data.table(pc.get.biomart())
+biomart.set <- as.data.table(pf.get.biomart())
 biomart.set <- biomart.set[chromosome_name%in%gtrd.mid$chrom,][,.(gene=ensembl_gene_id, transcript=ensembl_transcript_id, tss=transcription_start_site, up=transcription_start_site-1000,chrom=chromosome_name)]
 biomart.map<-split(biomart.set, by = 'chrom')
 

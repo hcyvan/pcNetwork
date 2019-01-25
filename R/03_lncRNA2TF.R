@@ -18,6 +18,7 @@ get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
     lncRNA.2.PCG
   }
 }
+
 get.tf.2.PCG.from.fimo <- function() {
   env = globalenv()
   key = '.tf.2.PCG'
