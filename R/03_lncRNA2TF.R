@@ -1,9 +1,9 @@
 library(dplyr)
 source('./lib/globals.R')
 source('./lib/helpers.R')
+source('./R/lib.R')
 
-all <- helper.get.lncRNA.PCG()
-pcg <- filter(all, GeneType%in%config$PCGs)
+pcg <- pf.get.diff('pcg')
 ############################################### GET x.2.y
 get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
   env = globalenv()

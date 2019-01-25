@@ -48,22 +48,6 @@ helper.get.data.count <- function() {
   data.count
 }
 
-helper.get.fpkm <- function(refresh=FALSE) {
-  rds.path <- './cache/data.fpkm.rds'
-  csv.path <- './data/data.fpkm.csv'
-  if (file.exists(rds.path)&& !refresh) {
-    data.fpkm <- readRDS(rds.path)
-  } else {
-      data.fpkm <- read.delim(csv.path,
-                              sep = ',',
-                              header = TRUE,
-                              stringsAsFactors = FALSE,
-                              row.names = 'GeneID')
-    rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
-    saveRDS(data.fpkm, file = rds.path)
-  }
-  data.fpkm
-}
 
 helper.get.biomart <- function(refresh=FALSE) {
   rds.path <- './cache/mart_export.rds'
@@ -93,7 +77,6 @@ helper.get.diff.anno <- function(refresh=FALSE) {
            geneStart = Transcript.start..bp., 
            geneEnd = Transcript.end..bp., 
            chromosome = Chromosome.scaffold.name)
-  print(head(genes.anno))
   genes.anno
 }
 

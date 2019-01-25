@@ -1,5 +1,6 @@
 library(stringr)
 library(dplyr)
+library(pcProfile)
 
 
 pv.lncRNA <- c('lincRNA',
@@ -72,8 +73,8 @@ pf.ensembl2symbol <- function(ensembl) {
 ##' @title 
 ##' @param symbol 
 ##' @return gene ensembl id
-##' @author Navy cheng
-pf.symbol2emsembl = function(symbol) {
+##' @author Navy Cheng
+pf.symbol2emsembl <- function(symbol) {
     biomart <- pf.get.biomart()
     biomart[match(symbol,biomart$hgnc_symbol),]$ensembl_gene_id
 }
@@ -84,8 +85,8 @@ pf.symbol2emsembl = function(symbol) {
 ##' @title 
 ##' @param type
 ##' @return differential expression genes filtered by GeneType
-##' @author c509
-pc.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
+##' @author Navy Cheng
+pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
     type <- unique(match.arg(type, several.ok=TRUE))
     diff <- readRDS('./cache/diff.3193.rds')
     if ('all'%in%type){
@@ -101,4 +102,50 @@ pc.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
         }
         data
     }
+}
+
+##' Get FPKM matrix
+##'
+##' @title Get FPKM matrix
+##' @param refresh reload FPKM
+##' @return fpkm matrix
+##' @author Navy Cheng
+pf.get.fpkm <- function(refresh=FALSE) {
+  rds.path <- './cache/data.fpkm.rds'
+  csv.path <- './data/data.fpkm.csv'
+  if (file.exists(rds.path)&& !refresh) {
+    data.fpkm <- readRDS(rds.path)
+  } else {
+      data.fpkm <- read.delim(csv.path,
+                              sep = ',',
+                              header = TRUE,
+                              stringsAsFactors = FALSE,
+                              row.names = 'GeneID')
+    rownames(data.fpkm) <- str_split_fixed(rownames(data.fpkm), '\\.',2)[,1]
+    saveRDS(data.fpkm, file = rds.path)
+  }
+  data.fpkm
+}
+
+##' Filter FPKM matrix
+##'
+##' @title Filter FPKM matrix
+##' @param ensembl ensembl ids
+##' @param refresh reload FPKM
+##' @return FPKM matrix
+##' @author Navy Cheng
+pf.filter.fpkm <- function(ensembl, refresh=FALSE) {
+  data <- pf.get.fpkm(refresh=FALSE)
+  data[match(ensembl, rownames(data)),]
+}
+
+##' Filter gene annotation
+##' 
+##' @title Filter gene annotation
+##' @param ensembl ensembl ids
+##' @return annotations
+##' @author c509
+pf.filter.anno <- function(ensembl) {
+  biomart <- pf.get.biomart()
+  biomart[match(ensembl, biomart$ensembl_gene_id),]
 }
