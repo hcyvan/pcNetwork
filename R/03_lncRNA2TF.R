@@ -3,51 +3,8 @@ source('./lib/globals.R')
 source('./lib/helpers.R')
 source('./R/lib.R')
 
-pcg <- pf.get.diff('pcg')
+
 ############################################### GET x.2.y
-get.lncRNA.2.PCG <- function(s=0, fdr=0.05) {
-  env = globalenv()
-  key = paste0('.lncRNA.2.PCG.',s)
-  if (exists(key, envir = env)) {
-    get(key,envir = env)
-  } else {
-    cor.pairs <- readRDS('./cache/cor.pairs.info.rds')
-    data <- filter(cor.pairs, type1%in%config$lncRNA & type2%in%config$PCGs & FDR<fdr & abs(r)>=s)
-    lncRNA.2.PCG <- lapply(split(data,as.vector(data$v1)), function(x){as.vector(x$v2)})
-    assign(key, lncRNA.2.PCG, envir = env)
-    lncRNA.2.PCG
-  }
-}
-
-get.tf.2.PCG.from.fimo <- function() {
-  env = globalenv()
-  key = '.tf.2.PCG'
-  if (exists(key, envir = env)) {
-    get(key, envir = env)
-  } else {
-    fimo <- read.delim('./data/enricher/fimo.460.2230.tsv', stringsAsFactors = F)
-    fimo <- filter(fimo, motif_alt_id!='')
-    tf.2.PCG <- lapply(split(fimo,as.vector(fimo$motif_alt_id)), function(x){unique(as.vector(x$sequence_name))})
-    assign(key, tf.2.PCG, envir = env)
-    tf.2.PCG
-  }
-}
-
-plot.lncRNA.2.PCG <- function() {
-  par(mfrow=c(3,3))
-  for (s in seq(0.1, 0.9, 0.1)) {
-    sapply(get.lncRNA.2.PCG(s), function(x){length(x)})%>%sort->tmp
-    tmp%>%barplot(main=s)
-    summary(tmp)
-  }
-  par(mfrow=c(1,1))
-}
-
-plot.tf.2.PCG <- function() {
-  sapply(get.tf.2.PCG.from.fimo(), function(x){length(x)})%>%sort->tmp
-  tmp%>%barplot()
-  summary(tmp)
-}
 # plot.lncRNA.2.PCG()
 # plot.tf.2.PCG()
 ################################################# tf-pcg
@@ -66,7 +23,58 @@ plot.tf.2.PCG <- function() {
 #############################################################
 devtools::load_all('./package/x2y/')
 
-getFix <- function(s=0, tf='fimo') {
+pcg <- pf.get.diff('pcg')
+lncRNA <- pf.get.diff('lncRNA')
+
+biomart <- pf.get.biomart()
+cor.pairs <- readRDS('./cache/cor.pearson.pairs.rds')
+
+t1 <- biomart[match(cor.pairs$v1, biomart$ensembl_gene_id), 'gene_biotype']
+t2 <- biomart[match(cor.pairs$v2, biomart$ensembl_gene_id), 'gene_biotype']
+pcg2lncRNA <- filter(data.frame(cor.pairs,t1=t1,t2=t2), (t1%in%pv.pcg & t2%in%pv.lncRNA))[,1:2] # n:0
+lncRNA2pcg.pairs <- filter(data.frame(cor.pairs,t1=t1,t2=t2), (t1%in%pv.lncRNA & t2%in%pv.pcg), FDR<0.05, abs(r) >= 0.3)
+
+fimo.gss.list <- readRDS('./cache/fimo.gss.list.rds')
+fimo.tss.pairs <- readRDS('./cache/fimo.tss.set.rds')
+trrust.pairs <- readRDS('./cache/trrust.set.rds')
+gtrd.pairs <- readRDS('./cache/gtrd.set.rds')
+
+
+getAdjust <- function(xa, xb, background=NULL) {
+  a.m <- x2yMatrix(xa, b=background)
+  b.m <- x2yMatrix(xb, b=background)
+  fix <- x2yMatrixAdjust(a.m, b.m, y.names = pcg$GeneID)
+  fix
+}
+
+fix.fimo.gss <-getAdjust(lncRNA2pcg.pairs, fimo.gss.list, pcg$GeneID)
+fix.fimo.tss <-getAdjust(lncRNA2pcg.pairs, fimo.tss.pairs, pcg$GeneID)
+fix.trrust <-getAdjust(lncRNA2pcg.pairs, trrust.pairs, pcg$GeneID)
+fix.gtrd <-getAdjust(lncRNA2pcg.pairs, gtrd.pairs, pcg$GeneID)
+
+system.time(lnc2tf.fimo.gss <- xyCor(fix.fimo.gss$a, fix.fimo.gss$b))
+saveRDS(lnc2tf.fimo.gss, file = './cache/lnc2tf.fimo.gss.rds')#14
+system.time(lnc2tf.fimo.tss <- xyCor(fix.fimo.tss$a, fix.fimo.tss$b))
+saveRDS(lnc2tf.fimo.tss, file = './cache/lnc2tf.fimo.tss.rds')#8
+system.time(lnc2tf.trrust <- xyCor(fix.trrust$a, fix.trrust$b))
+saveRDS(lnc2tf.trrust, file = './cache/lnc2tf.trrust.rds')#21
+system.time(lnc2tf.gtrd <- xyCor(fix.gtrd$a, fix.gtrd$b))
+saveRDS(lnc2tf.gtrd, file = './cache/lnc2tf.gtrd.rds')#21
+
+
+lncTP.fimo.gss <- new('XY2Z', raw=lnc2tf.fimo.gss, x=fix.fimo.gss$a, y=fix.fimo.gss$b)
+lncTP.fimo.tss <- new('XY2Z', raw=lnc2tf.fimo.tss, x=fix.fimo.gss$a, y=fix.fimo.tss$b)
+lncTP.trrust <- new('XY2Z', raw=lnc2tf.trrust, x=fix.trrust$a, y=fix.trrust$b)
+lncTP.gtrd <- new('XY2Z', raw=lnc2tf.gtrd, x=fix.gtrd$a, y=fix.gtrd$b)
+
+#filter(lncTP.gtrd@detail, b=='MYC', a%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+
+
+
+
+#########################################
+
+getFix <- function(tf, s=0) {
   if (tf=='enricher') {
     tf.2.PCG <- get.tf.2.PCG.from.enricher()
   } else {

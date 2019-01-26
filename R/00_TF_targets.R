@@ -42,6 +42,7 @@ get.tf.2.PCG.from.fimo <- function() {
   }
 }
 tf2gene.fimo.gss <- get.tf.2.PCG.from.fimo()
+saveRDS(as.data.frame(fimo.tss.set), './cache/fimo.gss.list.rds')
 ### TRUST
 trrust<-fread('./data/trrust_rawdata.human.tsv')
 trrust.set <- trrust[,.(tf=V1,gene=pf.symbol2emsembl(V2))]

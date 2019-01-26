@@ -27,14 +27,25 @@
 #' a2b <- list(x1=c('y1','y2','y3'), x2=c('y2','y3'), x3=c('y1','y2'))
 #' x2yMatirx(a2b)
 
-x2yMatrix <- function(a2b) {
-  a <- names(a2b)
-  b <- Reduce(union,a2b)
-  
-  lapply(a2b, function(t){
-    as.numeric(b%in%t)
-  }) -> a2b.loc
-  a2b.m <- matrix(unlist(a2b.loc), ncol = length(a2b.loc))
-  dimnames(a2b.m) <- list(b,a)
-  a2b.m
+x2yMatrix <- function(obj, a, b) {
+    UseMethod('x2yMatrix',obj)
+}
+
+x2yMatrix.list <- function(a2b, a=NULL, b=NULL) {
+    if (is.null(b)) {
+        b <- Reduce(union,a2b)
+    }
+    a2b.m <- do.call(cbind, lapply(a2b, function(t){
+        as.numeric(b%in%t)
+    }))
+    dimnames(a2b.m) <- list(b, names(a2b))
+    if (!is.null(a)) {
+        a2b.m[, a]
+    }
+    a2b.m
+}
+
+x2yMatrix.data.frame <- function(a2b, a=NULL, b=NULL) {
+    a2b.list <- lapply(split(a2b, as.vector(a2b[,1])), function(x){unique(as.vector(x[,2]))})
+    x2yMatrix.list(a2b.list,a,b)
 }

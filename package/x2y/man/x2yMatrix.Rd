@@ -4,7 +4,7 @@
 \alias{x2yMatrix}
 \title{Change x2y struct to xy.matrix}
 \usage{
-x2yMatrix(a2b)
+x2yMatrix(obj)
 }
 \arguments{
 \item{a2b}{Input data with a x2y struct}
