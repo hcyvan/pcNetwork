@@ -26,47 +26,34 @@
 #' fix <- x2yMatrixAdjust(xa2b.m, xb2b.m)
 #' xyCor(fix$a, fix$b)
 
-xyCor <- function(am, bm,verbose=F) {
-  an <- ncol(am)
-  bn <- ncol(bm)
-  matrix.phi <- matrix(nrow = an, ncol = bn)
-  matrix.p <- matrix(nrow = an, ncol = bn)
-  matrix.c.0 <- matrix(nrow = an, ncol = bn)
-  matrix.c.1 <- matrix(nrow = an, ncol = bn)
-  matrix.c.10 <- matrix(nrow = an, ncol = bn)
-  matrix.c.11 <- matrix(nrow = an, ncol = bn)
-  
-  lapply(seq(ncol(am)), function(i){
-    if (verbose) {
-      message(paste(i,'/',an))
+library(parallel)
+
+xyCor <- function(am, bm, cores=NULL) {
+    if (is.null(cores)){
+        cores <- detectCores()
     }
-    lapply(seq(ncol(bm)), function(j){
-      phi.test <- cor.test(am[,i],bm[,j])
-      con <- phiContingency(am[,i],bm[,j])
-      matrix.phi[i,j] <<- phi.test$estimate
-      matrix.p[i,j] <<- phi.test$p.value
-      matrix.c.0[i,j] <<- con[1]
-      matrix.c.1[i,j] <<- con[2]
-      matrix.c.10[i,j] <<- con[3]
-      matrix.c.11[i,j] <<- con[4]
-    })
-  })->tmp
-  
-  dimnames(matrix.phi) <- dimnames(matrix.p) <-
-    dimnames(matrix.c.0) <- dimnames(matrix.c.1) <-
-    dimnames(matrix.c.10) <- dimnames(matrix.c.11) <- list(colnames(am), colnames(bm))
-  
-  melt.phi <- reshape2::melt(matrix.phi)
-  melt.p <- reshape2::melt(matrix.p)
-  melt.c.0 <- reshape2::melt(matrix.c.0)
-  melt.c.1 <- reshape2::melt(matrix.c.1)
-  melt.c.10 <- reshape2::melt(matrix.c.10)
-  melt.c.11 <- reshape2::melt(matrix.c.11)
-  fdr <- p.adjust(melt.p$value, method = 'BH')
-  
-  ret <- data.frame(melt.phi, melt.p$value, fdr, melt.c.11$value, melt.c.10$value, melt.c.1$value, melt.c.0$value)
-  colnames(ret) <- c('a', 'b', 'phi', 'p', 'FDR', 'c11', 'c10', 'c1', 'c0')
-  ret[order(ret$FDR),]
+    a.list <- mclapply(as.list(as.data.frame(am)), function(x){
+        apply(bm,2,function(y){
+            phi.test <- cor.test(x,y)
+            con <- phiContingency(x,y)
+            paste(c(phi.test$estimate, phi.test$p.value, con), collapse='/')
+        })    
+    }, mc.cores = cores)
+    a2b.m <- do.call(rbind, a.list)
+    rownames(a2b.m)<-colnames(am)
+    a2b <- reshape2::melt(a2b.m)
+    m <- str_split(as.vector(a2b$value),'\\/',simplify=TRUE)
+    ret <- data.frame(a=a2b$Var1,
+                      b=a2b$Var2,
+                      phi=as.numeric(m[,1]),
+                      p=as.numeric(m[,2]),
+                      FDR=p.adjust(as.numeric(m[,2]), method='BH'),
+                      c11=as.integer(m[,6]),
+                      c10=as.integer(m[,5]),
+                      c1=as.integer(m[,4]),
+                      c0=as.integer(m[,3]),
+                      stringsAsFactors = FALSE)
+    ret[order(ret$FDR),]
 }
 
 phiContingency <- function(a,b) {

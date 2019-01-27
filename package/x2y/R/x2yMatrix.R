@@ -46,6 +46,12 @@ x2yMatrix.list <- function(a2b, a=NULL, b=NULL) {
 }
 
 x2yMatrix.data.frame <- function(a2b, a=NULL, b=NULL) {
+    if (!is.null(a)) {
+        a2b <- a2b[a2b[,1]%in%a,]
+    }
+    if (!is.null(b)) {
+        a2b <- a2b[a2b[,2]%in%b,]
+    }
     a2b.list <- lapply(split(a2b, as.vector(a2b[,1])), function(x){unique(as.vector(x[,2]))})
-    x2yMatrix.list(a2b.list,a,b)
+    x2yMatrix.list(a2b.list)
 }

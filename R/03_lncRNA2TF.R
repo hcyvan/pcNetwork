@@ -1,7 +1,6 @@
-library(dplyr)
-source('./lib/globals.R')
 source('./lib/helpers.R')
 source('./R/lib.R')
+devtools::load_all('./package/x2y/')
 
 
 ############################################### GET x.2.y
@@ -21,7 +20,7 @@ source('./R/lib.R')
 # }
 
 #############################################################
-devtools::load_all('./package/x2y/')
+
 
 pcg <- pf.get.diff('pcg')
 lncRNA <- pf.get.diff('lncRNA')
@@ -47,20 +46,26 @@ getAdjust <- function(xa, xb, background=NULL) {
   fix
 }
 
+
 fix.fimo.gss <-getAdjust(lncRNA2pcg.pairs, fimo.gss.list, pcg$GeneID)
 fix.fimo.tss <-getAdjust(lncRNA2pcg.pairs, fimo.tss.pairs, pcg$GeneID)
 fix.trrust <-getAdjust(lncRNA2pcg.pairs, trrust.pairs, pcg$GeneID)
 fix.gtrd <-getAdjust(lncRNA2pcg.pairs, gtrd.pairs, pcg$GeneID)
 
-system.time(lnc2tf.fimo.gss <- xyCor(fix.fimo.gss$a, fix.fimo.gss$b))
-saveRDS(lnc2tf.fimo.gss, file = './cache/lnc2tf.fimo.gss.rds')#14
-system.time(lnc2tf.fimo.tss <- xyCor(fix.fimo.tss$a, fix.fimo.tss$b))
-saveRDS(lnc2tf.fimo.tss, file = './cache/lnc2tf.fimo.tss.rds')#8
-system.time(lnc2tf.trrust <- xyCor(fix.trrust$a, fix.trrust$b))
-saveRDS(lnc2tf.trrust, file = './cache/lnc2tf.trrust.rds')#21
-system.time(lnc2tf.gtrd <- xyCor(fix.gtrd$a, fix.gtrd$b))
-saveRDS(lnc2tf.gtrd, file = './cache/lnc2tf.gtrd.rds')#21
+system.time(lnc2tf.fimo.gss <- xyCor(fix.fimo.gss$a, fix.fimo.gss$b, cores=6))#4
+saveRDS(lnc2tf.fimo.gss, file = './cache/lnc2tf.fimo.gss.rds')
+system.time(lnc2tf.fimo.tss <- xyCor(fix.fimo.tss$a, fix.fimo.tss$b, cores=6))#3
+saveRDS(lnc2tf.fimo.tss, file = './cache/lnc2tf.fimo.tss.rds')
+system.time(lnc2tf.trrust <- xyCor(fix.trrust$a, fix.trrust$b, cores=6))#4
+saveRDS(lnc2tf.trrust, file = './cache/lnc2tf.trrust.rds')
+system.time(lnc2tf.gtrd <- xyCor(fix.gtrd$a, fix.gtrd$b, cores=6))#9
+saveRDS(lnc2tf.gtrd, file = './cache/lnc2tf.gtrd.rds')
 
+
+lnc2tf.fimo.gss <- readRDS('./cache/lnc2tf.fimo.gss.rds')
+lnc2tf.fimo.tss <- readRDS('./cache/lnc2tf.fimo.tss.rds')
+lnc2tf.trrust <- readRDS('./cache/lnc2tf.trrust.rds')
+lnc2tf.gtrd <- readRDS('./cache/lnc2tf.gtrd.rds')
 
 lncTP.fimo.gss <- new('XY2Z', raw=lnc2tf.fimo.gss, x=fix.fimo.gss$a, y=fix.fimo.gss$b)
 lncTP.fimo.tss <- new('XY2Z', raw=lnc2tf.fimo.tss, x=fix.fimo.gss$a, y=fix.fimo.tss$b)
@@ -68,10 +73,6 @@ lncTP.trrust <- new('XY2Z', raw=lnc2tf.trrust, x=fix.trrust$a, y=fix.trrust$b)
 lncTP.gtrd <- new('XY2Z', raw=lnc2tf.gtrd, x=fix.gtrd$a, y=fix.gtrd$b)
 
 #filter(lncTP.gtrd@detail, b=='MYC', a%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-
-
-
-
 #########################################
 
 getFix <- function(tf, s=0) {
