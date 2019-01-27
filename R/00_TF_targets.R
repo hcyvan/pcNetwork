@@ -22,12 +22,15 @@ read.fimo.460.tss <- function() {
     ret
 }
 fimo <- read.fimo.460.tss()
-fimo.tss.set <- fimo[p.value<1e-6, .(.N), by=.(motif_alt_id, gene)][,.(tf=motif_alt_id, gene)]
+fimo.tss.set <- fimo[p.value<1e-4, .(.N), by=.(motif_alt_id, gene)][,.(tf=motif_alt_id, gene)]
 fimo.tss.set[,.(.N),by=(tf)]
 saveRDS(as.data.frame(fimo.tss.set), './cache/fimo.tss.set.rds')
 tf2gene.fimo.tss <- tf2gene(fimo.tss.set)
 
 ### Fimo GSS
+fimo.gss <- fread('./data/fimo.460.gss.tsv', stringsAsFactors = F)
+fimo.gss.set <- fimo.gss[, .(tf=motif_alt_id, gene=sequence_name)]
+
 get.tf.2.PCG.from.fimo <- function() {
   env = globalenv()
   key = '.tf.2.PCG'
@@ -74,11 +77,11 @@ biomart.map<-split(biomart.set, by = 'chrom')
 #}, gtrd.mid$chrom, gtrd.mid$start, gtrd.mid$end)
 #gtrd.mid[,("gene"):=genes]
 #saveRDS(gtrd.mid, './cache/gtrd.mid.rds')
-gtid.mid <- readRDS('./cache/gtrd.mid.rds')
+gtrd.mid <- readRDS('./cache/gtrd.mid.rds')
 gtrd.set<-unique(gtrd.mid[!is.na(gene), .(tf, gene)])
-gtrd.set[,.(.N),by=(tf)]
 saveRDS(as.data.frame(gtrd.set), './cache/gtrd.set.rds')
-
+gtrd.set <- as.data.table(readRDS('./cache/gtrd.set.rds'))
+gtrd.set[,.(.N),by=(tf)]
 tf2gene.gtrd <- tf2gene(gtrd.set)
 ##################
 par(mfrow=c(2,2))
