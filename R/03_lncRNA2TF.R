@@ -2,7 +2,6 @@ source('./lib/helpers.R')
 source('./R/lib.R')
 devtools::load_all('./package/x2y/')
 
-
 ############################################### GET x.2.y
 # plot.lncRNA.2.PCG()
 # plot.tf.2.PCG()
@@ -18,7 +17,6 @@ devtools::load_all('./package/x2y/')
 #     filter(biomart.symbol.biotype, hgnc_symbol%in%symbol)$ensembl_gene_id
 #   })
 # }
-
 #############################################################
 pcg <- pf.get.diff('pcg')
 lncRNA <- pf.get.diff('lncRNA')
@@ -42,22 +40,6 @@ cp.3 <- cor.pairs.format(s=0.3)
 cp.4 <- cor.pairs.format(s=0.4)
 cp.5 <- cor.pairs.format(s=0.5)
 cp.8 <- cor.pairs.format(s=0.8)
-
-dEnricher <- function(pair1, pair2, background=NULL, rds=NULL, cores=6, refresh=FALSE) {
-    if (refresh || is.null(rds) || !file.exists(rds)) {
-        message('Calulate XY2Z ...\n')
-        m.adj <-getX2yMatrixAdjust(pair1, pair2, background)
-        x2y <- xyCor(m.adj$a, m.adj$b, cores=6)
-        xy2z <- new('XY2Z', raw=x2y, x=m.adj$a, y=m.adj$b)
-        if (!is.null(rds)) {
-            saveRDS(xy2z, file = rds)
-        }
-        xy2z
-    } else {
-        message(paste0('Load XY2Z from ', rds, '...\n'))
-        readRDS(rds)
-    }
-}
 
 fimo.gss.3 <- dEnricher(cp.3, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.3.xy2z.rds')
 fimo.tss.3 <- dEnricher(cp.3, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.3.xy2z.rds')
