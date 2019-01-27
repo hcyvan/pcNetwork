@@ -25,30 +25,41 @@ trrust<-fread('./data/trrust_rawdata.human.tsv')
 trrust.set <- unique(trrust[,.(tf=V1,gene=pf.symbol2emsembl(V2))])
 saveRDS(as.data.frame(trrust.set), './cache/trrust.set.rds')
 ### Gtrd
-#gtrd <- fread('./data/Homo_sapiens_meta_clusters.interval', check.names = TRUE)
-#gtrd.mid <- gtrd[,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
-#biomart.set <- as.data.table(pf.get.biomart())
-#biomart.set <- biomart.set[chromosome_name%in%gtrd.mid$chrom,][,.(gene=ensembl_gene_id, transcript=ensembl_transcript_id, tss=transcription_start_site, up=transcription_start_site-1000,chrom=chromosome_name)]
-#biomart.map<-split(biomart.set, by = 'chrom')
-#i <- 0
-#total <- nrow(gtrd.mid)
-#genes<-mapply(function(chrom, start, end){
-#    i <<- i + 1
-#    print(paste(i, total))
-#    tfbs <- biomart.map[[chrom]][up<=end&tss>=start,]
-#    if (nrow(tfbs)==0){
-#        gene <- NA
-#    }else{
-#        gene <- tfbs$gene[1]
-#    }
-#    gene
-#}, gtrd.mid$chrom, gtrd.mid$start, gtrd.mid$end)
-#gtrd.mid[,("gene"):=genes]
-#saveRDS(gtrd.mid, './cache/gtrd.mid.rds')
-gtrd.mid <- readRDS('./cache/gtrd.mid.rds')
-gtrd.set<-unique(gtrd.mid[!is.na(gene), .(tf, gene)])
-saveRDS(as.data.frame(gtrd.set), './cache/gtrd.set.rds')
+biomart.set <- as.data.table(pf.get.biomart())
+biomart.set <- biomart.set[chromosome_name%in%gtrd.mid$chrom,][,.(gene=ensembl_gene_id, transcript=ensembl_transcript_id, tss=transcription_start_site, up=transcription_start_site-1000,chrom=chromosome_name)]
+biomart.map<-split(biomart.set, by = 'chrom')
+gtrd <- fread('./data/Homo_sapiens_meta_clusters.interval', check.names = TRUE)
+scanTss <- function(gtrd) {
+  i <- 0
+  total <- nrow(gtrd)
+  genes<-mapply(function(chrom, start, end){
+    i <<- i + 1
+    if (i%%1000==0){
+      print(paste(i%/%1000, total%/%1000))
+    }
+    tfbs <- biomart.map[[chrom]][up<=end&tss>=start,]
+    if (nrow(tfbs)==0){
+      gene <- NA
+    }else{
+      gene <- tfbs$gene[1]
+    }
+    gene
+  }, gtrd$chrom, gtrd$start, gtrd$end)
+  gtrd[,("gene"):=genes]
+  unique(gtrd[!is.na(gene), .(tf, gene)])
+}
+#### Gtrd All
+gtrd.mid <- gtrd[,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
+#gtrd.set <- scanTss(gtrd.mid)
+#saveRDS(as.data.frame(gtrd.set), './cache/gtrd.set.rds')
 gtrd.set <- as.data.table(readRDS('./cache/gtrd.set.rds'))
+#### Gtrd PC
+cell.type <- read.csv('./data/cell.set.csv', stringsAsFactors = FALSE)
+pc <- filter(cell.type,X==1)$x
+gtrd.mid.pc <- gtrd[cell.set%in%pc,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
+gtrd.set.pc <- scanTss(gtrd.mid.pc)
+saveRDS(as.data.frame(gtrd.set.pc), './cache/gtrd.set.pc.rds')
+gtrd.set.pc <- as.data.table(readRDS('./cache/gtrd.set.pc.rds'))
 ##################
 library(ggplot2)
 library(cowplot)
