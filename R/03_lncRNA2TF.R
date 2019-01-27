@@ -25,6 +25,12 @@ devtools::load_all('./package/x2y/')
 pcg <- pf.get.diff('pcg')
 lncRNA <- pf.get.diff('lncRNA')
 
+fimo.gss.pairs <- readRDS('./cache/fimo.gss.set.rds')
+fimo.tss.pairs <- readRDS('./cache/fimo.tss.set.rds')
+trrust.pairs <- readRDS('./cache/trrust.set.rds')
+gtrd.pairs <- readRDS('./cache/gtrd.set.rds')
+
+
 biomart <- pf.get.biomart()
 cor.pairs <- readRDS('./cache/cor.pearson.pairs.rds')
 
@@ -33,24 +39,10 @@ t2 <- biomart[match(cor.pairs$v2, biomart$ensembl_gene_id), 'gene_biotype']
 pcg2lncRNA <- filter(data.frame(cor.pairs,t1=t1,t2=t2), (t1%in%pv.pcg & t2%in%pv.lncRNA))[,1:2] # n:0
 lncRNA2pcg.pairs <- filter(data.frame(cor.pairs,t1=t1,t2=t2), (t1%in%pv.lncRNA & t2%in%pv.pcg), FDR<0.05, abs(r) >= 0.3)
 
-fimo.gss.list <- readRDS('./cache/fimo.gss.list.rds')
-fimo.tss.pairs <- readRDS('./cache/fimo.tss.set.rds')
-trrust.pairs <- readRDS('./cache/trrust.set.rds')
-gtrd.pairs <- readRDS('./cache/gtrd.set.rds')
-
-
-getAdjust <- function(xa, xb, background=NULL) {
-  a.m <- x2yMatrix(xa, b=background)
-  b.m <- x2yMatrix(xb, b=background)
-  fix <- x2yMatrixAdjust(a.m, b.m, y.names = pcg$GeneID)
-  fix
-}
-
-
-fix.fimo.gss <-getAdjust(lncRNA2pcg.pairs, fimo.gss.list, pcg$GeneID)
-fix.fimo.tss <-getAdjust(lncRNA2pcg.pairs, fimo.tss.pairs, pcg$GeneID)
-fix.trrust <-getAdjust(lncRNA2pcg.pairs, trrust.pairs, pcg$GeneID)
-fix.gtrd <-getAdjust(lncRNA2pcg.pairs, gtrd.pairs, pcg$GeneID)
+fix.fimo.gss <-getX2yMatrixAdjust(lncRNA2pcg.pairs, fimo.gss.pairs, pcg$GeneID)
+fix.fimo.tss <-getX2yMatrixAdjust(lncRNA2pcg.pairs, fimo.tss.pairs, pcg$GeneID)
+fix.trrust <-getX2yMatrixAdjust(lncRNA2pcg.pairs, trrust.pairs, pcg$GeneID)
+fix.gtrd <-getX2yMatrixAdjust(lncRNA2pcg.pairs, gtrd.pairs, pcg$GeneID)
 
 system.time(lnc2tf.fimo.gss <- xyCor(fix.fimo.gss$a, fix.fimo.gss$b, cores=6))#4
 saveRDS(lnc2tf.fimo.gss, file = './cache/lnc2tf.fimo.gss.rds')

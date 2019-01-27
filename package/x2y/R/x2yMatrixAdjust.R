@@ -33,3 +33,19 @@ x2yMatrixAdjust <- function(xa2y, xb2y, mode=c('intersect', 'union'),y.names=NUL
   xb2y.ad[is.na(xb2y.ad)] <- 0
   list(a=xa2y.ad, b=xb2y.ad)
 }
+
+##' Get xy.struct
+##'
+##' @title Get xy.struct
+##' @param xa x2b paris or list
+##' @param xb x2b paris or list
+##' @param background a set of `b`
+##' @export
+##' @return \item{name fix.list}{description a list contain the fixed result}
+##' @author c509
+getX2yMatrixAdjust <- function(xa, xb, background=NULL) {
+  a.m <- x2yMatrix(xa, b=background)
+  b.m <- x2yMatrix(xb, b=background)
+  fix <- x2yMatrixAdjust(a.m, b.m, y.names = pcg$GeneID)
+  fix
+}
