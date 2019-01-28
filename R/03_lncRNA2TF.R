@@ -47,22 +47,38 @@ trrust.3 <- dEnricher(cp.3, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.c
 gtrd.3 <- dEnricher(cp.3, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.3.xy2z.rds')
 gtrd.pc.3 <- dEnricher(cp.3, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.3.xy2z.rds')
 
-fimo.gss.4 <- dEnricher(cp.4, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.4.xy2z.rds')
-fimo.tss.4 <- dEnricher(cp.4, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.4.xy2z.rds')
-trrust.4 <- dEnricher(cp.4, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.4.xy2z.rds')
-gtrd.4 <- dEnricher(cp.4, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.4.xy2z.rds')
-gtrd.pc.4 <- dEnricher(cp.4, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.4.xy2z.rds')
+# fimo.gss.4 <- dEnricher(cp.4, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.4.xy2z.rds')
+# fimo.tss.4 <- dEnricher(cp.4, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.4.xy2z.rds')
+# trrust.4 <- dEnricher(cp.4, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.4.xy2z.rds')
+# gtrd.4 <- dEnricher(cp.4, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.4.xy2z.rds')
+# gtrd.pc.4 <- dEnricher(cp.4, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.4.xy2z.rds')
+# 
+# fimo.gss.5 <- dEnricher(cp.5, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.5.xy2z.rds')
+# fimo.tss.5 <- dEnricher(cp.5, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.5.xy2z.rds')
+# trrust.5 <- dEnricher(cp.5, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.5.xy2z.rds')
+# gtrd.5 <- dEnricher(cp.5, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.5.xy2z.rds')
+# gtrd.pc.5 <- dEnricher(cp.5, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.5.xy2z.rds')
+# 
+# fimo.gss.8 <- dEnricher(cp.8, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.8.xy2z.rds')
+# fimo.tss.8 <- dEnricher(cp.8, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.8.xy2z.rds')
+# trrust.8 <- dEnricher(cp.8, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.8.xy2z.rds')
+# ppgtrd.8 <- dEnricher(cp.8, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.8.xy2z.rds')
+# gtrd.pc.8 <- dEnricher(cp.8, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.8.xy2z.rds')
 
-fimo.gss.5 <- dEnricher(cp.5, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.5.xy2z.rds')
-fimo.tss.5 <- dEnricher(cp.5, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.5.xy2z.rds')
-trrust.5 <- dEnricher(cp.5, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.5.xy2z.rds')
-gtrd.5 <- dEnricher(cp.5, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.5.xy2z.rds')
-gtrd.pc.5 <- dEnricher(cp.5, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.5.xy2z.rds')
+filter(gtrd.3@detail, b=='MYC', a%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+filter(gtrd.3@detail,b=='MYC')
+filter(gtrd.3@detail, a=='ENSG00000225177')[,-4]
 
-fimo.gss.8 <- dEnricher(cp.8, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.8.xy2z.rds')
-fimo.tss.8 <- dEnricher(cp.8, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.8.xy2z.rds')
-trrust.8 <- dEnricher(cp.8, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.8.xy2z.rds')
-gtrd.8 <- dEnricher(cp.8, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.8.xy2z.rds')
-gtrd.pc.8 <- dEnricher(cp.8, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.8.xy2z.rds')
+apply(filter(gtrd.3@detail, a=='ENSG00000225177')[,-3:-4][,4:7],1,sum)
 
-#filter(lncTP.gtrd@detail, b=='MYC', a%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+lncRNA.tf<-filter(reshape2::melt(x2yMatrix(gtrd.pairs, a=gtrd.3@nodes$y, b=gtrd.3@nodes$x)), value==1)[,1:2]
+
+
+gtrd.b<-filter(gtrd.3@detail, paste(a,b)%in%paste(lncRNA.tf$Var1, lncRNA.tf$Var2))
+gtrd.nb<-filter(gtrd.3@detail, !paste(a,b)%in%paste(lncRNA.tf$Var1, lncRNA.tf$Var2))
+
+
+
+
+
+

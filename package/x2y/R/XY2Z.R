@@ -90,7 +90,7 @@ setMethod("filterByX", signature(object='XY2Z',x='character'), function(object, 
 ##-------------------------------------
 setMethod("initialize", "XY2Z", function(.Object,...){
   .Object <- callNextMethod()
-  detail <- .Object@raw%>%filter(FDR<.Object@FDR, phi>0, c11+c10>(c11+c10+c1+c0)/10)
+  detail <- .Object@raw%>%filter(FDR<.Object@FDR, phi>0, c11>(c11+c10+c1+c0)*0.05)
   detail$a <- as.vector(detail$a)
   detail$b <- as.vector(detail$b)
   .Object@detail <- detail

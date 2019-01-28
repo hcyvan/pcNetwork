@@ -11,17 +11,16 @@
 ##' @export
 ##' @author Navy Cheng
 dEnricher <- function(pair1, pair2, background=NULL, rds=NULL, cores=6, refresh=FALSE) {
+    m.adj <-getX2yMatrixAdjust(pair1, pair2, background)
     if (refresh || is.null(rds) || !file.exists(rds)) {
-        message('Calulate XY2Z ...\n')
-        m.adj <-getX2yMatrixAdjust(pair1, pair2, background)
+        message('Calulate x2y ...\n')
         x2y <- xyCor(m.adj$a, m.adj$b, cores=6)
-        xy2z <- new('XY2Z', raw=x2y, x=m.adj$a, y=m.adj$b)
         if (!is.null(rds)) {
-            saveRDS(xy2z, file = rds)
+            saveRDS(x2y, file = rds)
         }
-        xy2z
     } else {
-        message(paste0('Load XY2Z from ', rds, '...\n'))
-        readRDS(rds)
+        message(paste0('Load x2y from ', rds, '...\n'))
+        x2y <- readRDS(rds)
     }
+    new('XY2Z', raw=x2y, x=m.adj$a, y=m.adj$b)
 }
