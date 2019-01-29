@@ -15,7 +15,7 @@ fimo.tss.4 <- fread(paste0('./data/fimo.460.tss/fimo.460.tss.1000.4.tsv'), check
 fimo.tss <- rbind(fimo.tss.1, fimo.tss.2, fimo.tss.3, fimo.tss.4)
 name <- str_split(fimo.tss$sequence_name, '\\|', simplify = TRUE)
 fimo.tss[,c('gene','transcript','chromosome'):=list(name[,1], name[2], name[,3])]
-fimo.tss.set <- unique(fimo.tss[p.value<=1e-4,.(tf=motif_alt_id, gene=gene)])
+fimo.tss.set <- unique(fimo.tss[p.value<=1e-5,.(tf=motif_alt_id, gene=gene)])
 saveRDS(as.data.frame(fimo.tss.set), './cache/fimo.tss.set.rds')
 ### Fimo GSS
 fimo.gss <- fread('./data/fimo.460.gss.tsv', stringsAsFactors = F, check.names = TRUE)
