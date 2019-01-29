@@ -1,6 +1,9 @@
 source('./R/lib.R')
 library(data.table)
 library(stringr)
+library(ggplot2)
+library(cowplot)
+
 
 tf2gene <- function(pairs) {
     lapply(split(pairs,as.vector(pairs$tf)), function(x){unique(as.vector(x$gene))})
@@ -61,16 +64,13 @@ gtrd.set.pc <- scanTss(gtrd.mid.pc)
 saveRDS(as.data.frame(gtrd.set.pc), './cache/gtrd.set.pc.rds')
 gtrd.set.pc <- as.data.table(readRDS('./cache/gtrd.set.pc.rds'))
 ##################
-library(ggplot2)
-library(cowplot)
 
-tf2gene.jasper <- readRDS('./cache/fimo.tss.set.rds')
-tf2gene.trrust <- readRDS('./cache/trrust.set.rds')
-tf2gene.gtrd <- readRDS('./cache/gtrd.set.rds')
+tf2gene.jasper <- data.table(readRDS('./cache/fimo.tss.set.rds'))
+tf2gene.trrust <- data.table(readRDS('./cache/trrust.set.rds'))
+tf2gene.gtrd <- data.table(readRDS('./cache/gtrd.set.rds'))
 
 
-fimo.tss.hist <- ggplot(fimo.tss.set[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
-fimo.gss.hist <- ggplot(fimo.gss.set[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
-trrust.hist <- ggplot(trrust.set[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 1)
-gtrd.hist <- ggplot(gtrd.set[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
-plot_grid(fimo.tss.hist, fimo.gss.hist, trrust.hist, gtrd.hist, labels = c(1,2,3,4))
+fimo.tss.hist <- ggplot(tf2gene.jasper[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
+trrust.hist <- ggplot(tf2gene.trrust[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 1)
+gtrd.hist <- ggplot(tf2gene.gtrd[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
+plot_grid(fimo.tss.hist, trrust.hist, gtrd.hist, labels = c(1,2,3,4))
