@@ -67,6 +67,18 @@ pf.ensembl2symbol <- function(ensembl) {
     biomart[match(ensembl,biomart$ensembl_gene_id),]$hgnc_symbol
 }
 
+##' Tranlate gene ensembl id to biotype
+##'
+##' Tranlate gene ensembl id to biotype
+##' @title 
+##' @return gene biotype
+##' @author Navy Cheng
+##' @param ensembl 
+pf.ensembl2biotype <- function(ensembl) {
+    biomart <- pf.get.biomart()
+    biomart[match(ensembl,biomart$ensembl_gene_id),]$gene_biotype
+}
+
 ##' Covert symbol to gene ensembl id
 ##'
 ##' Covert symbol to gene ensembl id

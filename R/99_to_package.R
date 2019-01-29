@@ -25,12 +25,14 @@ document('../pcProfile')
 #prad.rna.count <- helper.get.data.count()
 #prad.rna.fpkm <- helper.get.fpkm()
 
-setwd('/home/c509/文档/bio/pcProfile')
+setwd('../pcProfile')
 #devtools::use_data(prad.rna.count, overwrite = TRUE)
 #devtools::use_data(prad.rna.fpkm, overwrite = TRUE)
 devtools::use_data(tf2gene.jasper, overwrite = TRUE)
 devtools::use_data(tf2gene.trrust, overwrite = TRUE)
 devtools::use_data(tf2gene.gtrd, overwrite = TRUE)
+
+tf2gene.trrust <- trrust.set
 
 roxygenize('.')
 load_all('.')
