@@ -64,6 +64,11 @@ gtrd.set.pc <- as.data.table(readRDS('./cache/gtrd.set.pc.rds'))
 library(ggplot2)
 library(cowplot)
 
+tf2gene.jasper <- readRDS('./cache/fimo.tss.set.rds')
+tf2gene.trrust <- readRDS('./cache/trrust.set.rds')
+tf2gene.gtrd <- readRDS('./cache/gtrd.set.rds')
+
+
 fimo.tss.hist <- ggplot(fimo.tss.set[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
 fimo.gss.hist <- ggplot(fimo.gss.set[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
 trrust.hist <- ggplot(trrust.set[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 1)
