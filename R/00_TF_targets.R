@@ -24,9 +24,49 @@ statistic(tf2gene.jasper)
 statistic(tf2gene.gtrd)
 statistic(tf2gene.trrust)
 
+p1 <- ggplot(tf2gene.jasper[,.(.N), by=(tf)], aes(x=N)) +
+                geom_histogram(binwidth = 100) +
+                labs(x='Target Gene numbers', y='TF numbers') +
+                theme(axis.title = element_text(size = rel(.8)))
+info1 <- ggplot_build(p1)
+p1 <- p1 + annotate("text",
+                    x = sum(info1$layout$panel_params[[1]]$x.range)/2,
+                    y = sum(info1$layout$panel_params[[1]]$y.range)/2,
+                    label = "tf2gene.jasper",size=rel(5))
+              
+p2 <- ggplot(tf2gene.gtrd[,.(.N),by=(tf)], aes(x=N)) +
+                geom_histogram(binwidth = 100) +
+                labs(x='Target Gene numbers', y='TF numbers') +
+                theme(axis.title = element_text(size = rel(.8)))
+info2 <- ggplot_build(p2)
+p2 <- p2 + annotate("text",
+                    x = sum(info2$layout$panel_params[[1]]$x.range)/2,
+                    y = sum(info2$layout$panel_params[[1]]$y.range)/2,
+                    label = "tf2gene.gtrd",size=rel(5))
 
-fimo.tss.hist <- ggplot(tf2gene.jasper[,.(.N), by=(tf)], aes(x=N))+geom_histogram(binwidth = 200)
-gtrd.hist <- ggplot(tf2gene.gtrd[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 100)
-trrust.hist <- ggplot(tf2gene.trrust[,.(.N),by=(tf)], aes(x=N))+geom_histogram(binwidth = 1)
+p3 <- ggplot(tf2gene.trrust[,.(.N),by=(tf)], aes(x=N)) +
+                geom_histogram(binwidth = 1) +
+                labs(x='Target Gene numbers', y='TF numbers') +
+                theme(axis.title = element_text(size = rel(.8)))
+info3 <- ggplot_build(p3)
+p3 <- p3 + annotate("text",
+                    x = sum(info3$layout$panel_params[[1]]$x.range)/2,
+                    y = sum(info3$layout$panel_params[[1]]$y.range)/2,
+                    label = "tf2gene.trrust",size=rel(5))
 
-plot_grid(fimo.tss.hist, gtrd.hist, trrust.hist, labels = c('A','B','C','D'))
+
+T<-venn.diagram(list(JASPER=tf2gene.jasper$tf,
+                     GTRD=tf2gene.gtrd$tf,
+                     TRRUST=tf2gene.trrust$tf),
+                filename = NULL,
+                lty=0,
+                fill=c('red','green','blue'),
+                margin=0.1,
+                reverse=TRUE)
+
+png("./reports/thesis//tf2gene.png", height = 800, width = 800)
+plot_grid(p1, p2, p3, grobTree(T), labels = c('A','B','C','D'), label_size = 20)
+dev.off()
+
+
+
