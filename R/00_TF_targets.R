@@ -2,6 +2,7 @@ library(pcProfile)
 library(data.table)
 library(ggplot2)
 library(cowplot)
+library(VennDiagram)
 
 source('./R/lib.R')
 
@@ -59,12 +60,15 @@ T<-venn.diagram(list(JASPER=tf2gene.jasper$tf,
                      GTRD=tf2gene.gtrd$tf,
                      TRRUST=tf2gene.trrust$tf),
                 filename = NULL,
-                lty=0,
-                fill=c('red','green','blue'),
+                col=c('red','green','blue'),
+                lty=1,
+                lwd=3,
+                cat.dist=0.1,
                 margin=0.1,
                 reverse=TRUE)
 
-png("./reports/thesis//tf2gene.png", height = 800, width = 800)
+# png("./reports/thesis//tf2gene.png", height = 800, width = 800)
+win.metafile(filename="./reports/thesis//tf2gene.emf",width=7,height=7)
 plot_grid(p1, p2, p3, grobTree(T), labels = c('A','B','C','D'), label_size = 20)
 dev.off()
 
