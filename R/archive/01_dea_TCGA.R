@@ -1,9 +1,12 @@
 library(edgeR)
 library(stringr)
 library(dplyr)
+library(pcProfile)
 
-source('./lib/globals.R')
-source('./lib/helpers.R')
+source('./R/lib.R')
+
+# source('./lib/globals.R')
+# source('./lib/helpers.R')
 
 getDE <- function(def, lfc=1, p.value=0.05) {
   fdr <- p.adjust(def$table$PValue, method = 'BH')
@@ -13,17 +16,18 @@ getDE <- function(def, lfc=1, p.value=0.05) {
   cbind(de.genes, de,FDR=fdr[is.de!=0])
 }
 
-data.count <- helper.get.data.count()
-biomart <- helper.get.biomart()
-data.sample <- read.delim('./data/data.sample.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+data("prad.rna.count") # put prad.rna.count into the global environment
+biomart <- distinct(pf.get.biomart(), ensembl_gene_id, .keep_all = TRUE)
 
-counts <- data.count
-group <- data.sample$sample.type
-genes <- biomart[match(rownames(data.count), biomart$Gene.stable.ID),] %>%
-  select(GeneID=Gene.stable.ID,
-         GeneType=Gene.type,
-         symbol=HGNC.symbol,
-         GoTermName=GO.term.name)
+# 
+# data.sample <- read.delim('./data/data.sample.csv', sep = ',', header = TRUE, stringsAsFactors = FALSE)
+
+counts <- prad.rna.count
+group <- c(rep('T', 499), rep('N',52)) # 1:499 tumor, 500:551: normal, ?prad.ran.count fro detail.
+genes <- biomart[match(rownames(prad.rna.count), biomart$ensembl_gene_id),] %>%
+  dplyr::select(GeneID=ensembl_gene_id,
+         GeneType=gene_biotype,
+         symbol=hgnc_symbol)
 
 
 y <- DGEList(counts = counts, genes = genes)
@@ -36,7 +40,9 @@ system.time(y <- calcNormFactors(y))
 ## estimate Disp
 tissue <- factor(data.sample$sample.type)
 design <- model.matrix(~tissue)
-system.time(y <- estimateDisp(y, design, robust=TRUE))
+system.time(y <- estimateDisp(y, design, robust=TRUE)) # 483s
+plotBCV(y)
+# saveRDS(y, './cache/y.glm.rds')
 ## get GLM model
 system.time(fit <- glmQLFit(y, design, robust=TRUE))
 ## test
@@ -46,7 +52,7 @@ p.value <- 0.05
 
 is.de <- decideTests(qlf, lfc=lfc, p.value = p.value)
 summary(is.de)
-plotMD(qlf, status = is.de, values=c(1, -1), col=c("red","blue"))
+plotMD(qlf, status = is.de, col=c("red","blue"))
 
 ## the NA line is because not Every gene is RNA-seq is annotated in biomart
 diff.qlf <- getDE(qlf, lfc=lfc, p.value = p.value) # <--------------- USE THIS 

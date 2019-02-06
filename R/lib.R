@@ -100,7 +100,8 @@ pf.symbol2emsembl <- function(symbol) {
 ##' @author Navy Cheng
 pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
     type <- unique(match.arg(type, several.ok=TRUE))
-    diff <- readRDS('./cache/diff.3193.rds')
+    # diff <- readRDS('./cache/diff.3193.rds')
+    diff <- readRDS('./support/diff.T_N.qlf.1.005.3069.rds')
     if ('all'%in%type){
         diff
     } else {
