@@ -158,6 +158,8 @@ plot_grid(p1,  grobTree(p2), labels = c('A','B'), label_size = 30)
 dev.off()
 
 #####################################################################################
+library(pcProfile)
+
 get.ar.target <- function(tf2gene) {
   ar.target <- filter(tf2gene,tf=='AR')$gene
   ar.target <- data.frame(gene=pf.ensembl2symbol(ar.target), type=pf.ensembl2biotype(ar.target), stringsAsFactors = FALSE)
@@ -165,7 +167,6 @@ get.ar.target <- function(tf2gene) {
   genes[-which(genes=='')]
 }
 
-a <- filter(tf2gene.gtrd,tf=='AR')$gene
 
 ar.target.gtrd <- get.ar.target(tf2gene.gtrd)
 ar.target.jasper <- get.ar.target(tf2gene.jasper)
