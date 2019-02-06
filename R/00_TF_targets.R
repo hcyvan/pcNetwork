@@ -17,8 +17,7 @@ statistic <- function(tf2gene) {
   tfs <- length(unique(tf2gene$tf))
   tf.gene <- dim(tf2gene)[1]
   print(paste('genes:',genes,';tfs:', tfs, ';tf.gene:', tf.gene))
-  # print(table(pf.ensembl2biotype(unique(tf2gene$gene))))
-  
+  #' print(table(pf.ensembl2biotype(unique(tf2gene$gene))))
 }
 
 statistic(tf2gene.jasper)

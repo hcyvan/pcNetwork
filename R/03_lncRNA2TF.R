@@ -41,11 +41,13 @@ cp.4 <- cor.pairs.format(s=0.4)
 cp.5 <- cor.pairs.format(s=0.5)
 cp.8 <- cor.pairs.format(s=0.8)
 
+
 fimo.gss.3 <- dEnricher(cp.3, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.3.xy2z.rds')
 fimo.tss.3 <- dEnricher(cp.3, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.3.xy2z.rds')
 trrust.3 <- dEnricher(cp.3, trrust.pairs, pcg$GeneID, rds='./cache/xy2z/trrust.cp.3.xy2z.rds')
 gtrd.3 <- dEnricher(cp.3, gtrd.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.cp.3.xy2z.rds')
 gtrd.pc.3 <- dEnricher(cp.3, gtrd.pc.pairs, pcg$GeneID, rds='./cache/xy2z/gtrd.pc.cp.3.xy2z.rds')
+gtrd.2.3 <- dEnricher(cp.3, gtrd.set, pcg$GeneID, rds='./cache/xy2z/gtrd.2.cp.3.xy2z.rds')
 
 # fimo.gss.4 <- dEnricher(cp.4, fimo.gss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.gss.cp.4.xy2z.rds')
 # fimo.tss.4 <- dEnricher(cp.4, fimo.tss.pairs, pcg$GeneID, rds='./cache/xy2z/fimo.tss.cp.4.xy2z.rds')

@@ -27,11 +27,11 @@ trrust.set <- unique(trrust[,.(tf=V1,gene=pf.symbol2emsembl(V2))])
 trrust.set <- trrust.set[!is.na(gene)]
 saveRDS(as.data.frame(trrust.set), './cache/trrust.set.rds')
 ### Gtrd
-biomart.set <- as.data.table(pf.get.biomart())
-biomart.set <- biomart.set[chromosome_name%in%gtrd.mid$chrom,][,.(gene=ensembl_gene_id, transcript=ensembl_transcript_id, tss=transcription_start_site, up=transcription_start_site-1000,chrom=chromosome_name)]
-biomart.map<-split(biomart.set, by = 'chrom')
 gtrd <- fread('./data/Homo_sapiens_meta_clusters.interval', check.names = TRUE)
 scanTss <- function(gtrd) {
+  biomart.set <- as.data.table(pf.get.biomart())
+  biomart.set <- biomart.set[chromosome_name%in%gtrd$chrom,][,.(gene=ensembl_gene_id, transcript=ensembl_transcript_id, tss=transcription_start_site, up=transcription_start_site-1000,chrom=chromosome_name)]
+  biomart.map<-split(biomart.set, by = 'chrom')
   i <- 0
   total <- nrow(gtrd)
   genes<-mapply(function(chrom, start, end){
@@ -50,16 +50,22 @@ scanTss <- function(gtrd) {
   gtrd[,("gene"):=genes]
   unique(gtrd[!is.na(gene), .(tf, gene)])
 }
-#### Gtrd All
+
+###---------------------------- GTRD
+#### Gtrd: v1
 gtrd.mid <- gtrd[,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
 #gtrd.set <- scanTss(gtrd.mid)
 #saveRDS(as.data.frame(gtrd.set), './cache/gtrd.set.rds')
 gtrd.set <- as.data.table(readRDS('./cache/gtrd.set.rds'))
-#### Gtrd PC
+#### Gtrd: v2         peak.caller.count > 2
+gtrd.mid.2 <- gtrd[peak.caller.count>2][,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
+#' gtrd.set.peak.caller.count.2 <- scanTss(gtrd.mid.2)
+#' saveRDS(as.data.frame(gtrd.set.peak.caller.count.2), './cache/gtrd.set.peak.call.count.2.rds')
+gtrd.set.2 <- as.data.table(readRDS('./cache/gtrd.set.peak.call.count.2.rds'))
+#### Gtrd Prostate Cancer
 cell.type <- read.csv('./data/cell.set.csv', stringsAsFactors = FALSE)
 pc <- filter(cell.type,X==1)$x
 gtrd.mid.pc <- gtrd[cell.set%in%pc,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
 gtrd.set.pc <- scanTss(gtrd.mid.pc)
 saveRDS(as.data.frame(gtrd.set.pc), './cache/gtrd.set.pc.rds')
 gtrd.set.pc <- as.data.table(readRDS('./cache/gtrd.set.pc.rds'))
-
