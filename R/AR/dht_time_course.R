@@ -106,7 +106,6 @@ labels <- c('20min', '40min', '1h', '2h', '4h', '8h', '16h', '24h', '48h')
 png(filename=paste0('./reports/thesis/androgen_response_gene_A.png'),width=600,height=800)
 # win.metafile(paste0('./reports/thesis/androgen_response_gene_A.emf'))
 # pdf(filename=paste0('./reports/thesis/androgen_response_gene_A.pdf'),width=1024,height=728)
-
 m <- as.matrix(beadchip.diff$diffscore[,4:12])
 colnames(m) <- labels
 par(cex.main=50)
@@ -142,7 +141,6 @@ p2 <- venn.diagram(list(EARLY=dge.early,
                    lwd=5,
                    col=c('red','blue'),
                    cex=2,
-                   
                    fill=NA,
                    cat.cex=2,
                    cat.dist=0.05,

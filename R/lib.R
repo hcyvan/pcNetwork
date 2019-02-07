@@ -147,9 +147,13 @@ pf.get.fpkm <- function(refresh=FALSE) {
 ##' @param refresh reload FPKM
 ##' @return FPKM matrix
 ##' @author Navy Cheng
-pf.filter.fpkm <- function(ensembl, refresh=FALSE) {
+pf.filter.fpkm <- function(ensembl, rm.na=FALSE, refresh=FALSE) {
   data <- pf.get.fpkm(refresh=FALSE)
-  data[match(ensembl, rownames(data)),]
+  index <- match(ensembl, rownames(data))
+  if (rm.na) {
+    index <- na.omit(index)
+  }
+  data[index,]
 }
 
 ##' Filter gene annotation
