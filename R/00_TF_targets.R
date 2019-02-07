@@ -71,5 +71,11 @@ win.metafile(filename="./reports/thesis//tf2gene.emf",width=7,height=7)
 plot_grid(p1, p2, p3, grobTree(T), labels = c('A','B','C','D'), label_size = 20)
 dev.off()
 
+diff <- pf.get.diff()
 
+
+unique(tf2gene.gtrd$tf)%in%diff$symbol %>% sum
+
+tf2gene.jasper[,.(.N), by=(tf)][N>10000]
+tf2gene.gtrd[,.(.N), by=(tf)][N>10000]
 
