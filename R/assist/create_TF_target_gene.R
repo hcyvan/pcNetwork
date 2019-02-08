@@ -56,7 +56,12 @@ scanTss <- function(gtrd,v3=FALSE) {
     gene
   }, gtrd$chrom, gtrd$start, gtrd$end)
   gtrd[,("gene"):=genes]
-  unique(gtrd[!is.na(gene), .(tf, gene)])
+  if (v3) {
+      gtrd[!is.na(gene), .(tf, gene)][,.N, by=c('tf','gene')]
+  } else {
+      unique(gtrd[!is.na(gene), .(tf, gene)])
+  }
+  
 }
 
 ###---------------------------- GTRD
@@ -72,6 +77,10 @@ gtrd.mid.2 <- gtrd[peak.caller.count>2][,.(chrom=str_sub(X.CHROM, 4), start=STAR
 gtrd.set.2 <- as.data.table(readRDS('./cache/gtrd.set.peak.call.count.2.rds'))
 #### Gtrd: v3
 gtrd.mid.3 <- gtrd[,.(chrom=str_sub(X.CHROM, 4), start=START, end=END, len=END-START, tf=tfTitle)]
+gtrd.set.3 <- scanTss(gtrd.mid.3, v3=TRUE)
+saveRDS(as.data.frame(gtrd.set.3), './cache/gtrd.set.3.rds')
+
+
 #### Gtrd Prostate Cancer
 cell.type <- read.csv('./data/cell.set.csv', stringsAsFactors = FALSE)
 pc <- filter(cell.type,X==1)$x

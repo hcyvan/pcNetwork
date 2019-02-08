@@ -7,10 +7,9 @@ library(gplots)
 
 source('./R/lib.R')
 
-data("prad.rna.count") # put prad.rna.count into the global environment
-biomart <- distinct(pf.get.biomart(), ensembl_gene_id, .keep_all = TRUE)
 
-counts <- prad.rna.count[,c(500:551,1:499)]# 1:499 tumor, 500:551: normal, ?prad.ran.count fro detail.
+biomart <- distinct(pf.get.biomart(), ensembl_gene_id, .keep_all = TRUE)
+counts <- pf.get.count()[,c(500:551,1:499)]# 1:499 tumor, 500:551: normal
 group <- c(rep('N',52),rep('T', 499))
 genes <- biomart[match(rownames(prad.rna.count), biomart$ensembl_gene_id),] %>%
   dplyr::select(GeneID=ensembl_gene_id,

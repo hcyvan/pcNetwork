@@ -1,3 +1,4 @@
+
 library(devtools)
 library(pryr)
 library(roxygen2)
@@ -22,17 +23,18 @@ roxygenize('../pcProfile')
 load_all('../pcProfile')
 document('../pcProfile')
 
-#prad.rna.count <- helper.get.data.count()
-#prad.rna.fpkm <- helper.get.fpkm()
 
 setwd('../pcProfile')
+tf2gene.jaspar <- fimo.tss.set.2
+tf2gene.gtrd <- gtrd.set.3
+tf2gene.trrust <- trrust.set.2
 #devtools::use_data(prad.rna.count, overwrite = TRUE)
 #devtools::use_data(prad.rna.fpkm, overwrite = TRUE)
-devtools::use_data(tf2gene.jasper, overwrite = TRUE)
+devtools::use_data(tf2gene.jaspar, overwrite = TRUE)
 devtools::use_data(tf2gene.trrust, overwrite = TRUE)
 devtools::use_data(tf2gene.gtrd, overwrite = TRUE)
 
-tf2gene.trrust <- trrust.set
+
 
 roxygenize('.')
 load_all('.')

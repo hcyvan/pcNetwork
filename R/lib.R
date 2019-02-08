@@ -117,6 +117,16 @@ pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
     }
 }
 
+##' Get TCGA-PRAD count matrix
+##'
+##' @title Get count matrix
+##' @return count matrix
+##' @author Navy Cheng
+pf.get.count <- function(refresh=FALSE) {
+    load('./support/prad.rna.count.rda')
+    prad.rna.count
+}
+
 ##' Get FPKM matrix
 ##'
 ##' @title Get FPKM matrix
