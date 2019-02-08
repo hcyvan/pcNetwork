@@ -1,3 +1,5 @@
+source('../lib.R')
+
 fpkm <- pf.get.fpkm()
 
 zfpkm <- t(apply(fpkm[apply(fpkm, 1, sum)!=0,],1,function(x){
