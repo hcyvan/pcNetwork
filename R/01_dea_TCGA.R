@@ -71,6 +71,7 @@ ggplot(data=dd) + geom_point(aes(x=logFC,y=-log(FDR),color=logCPM)) +
 dev.off()
 
 #Diff Gene Heatmap
+samples <- colnames(counts)
 normal <- samples[500:551]
 tumor <- samples[1:499]
 tumor.2 <- c()
@@ -82,6 +83,8 @@ for (i in tumor) {
     }
   }
 }
+
+
 diff <- arrange(diff, desc(abs(logFC)))
 diff.fpkm <- pf.filter.fpkm(diff$GeneID, rm.na = TRUE)
 diff.fpkm.filter = diff.fpkm[apply(diff.fpkm==0,1,sum)==0,]
