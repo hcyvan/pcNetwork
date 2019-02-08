@@ -4,14 +4,12 @@ library(dplyr)
 library(pcProfile)
 library(ggplot2)
 library(gplots)
-
 source('./R/lib.R')
-
 
 biomart <- distinct(pf.get.biomart(), ensembl_gene_id, .keep_all = TRUE)
 counts <- pf.get.count()[,c(500:551,1:499)]# 1:499 tumor, 500:551: normal
 group <- c(rep('N',52),rep('T', 499))
-genes <- biomart[match(rownames(prad.rna.count), biomart$ensembl_gene_id),] %>%
+genes <- biomart[match(rownames(counts), biomart$ensembl_gene_id),] %>%
   dplyr::select(GeneID=ensembl_gene_id,
          GeneType=gene_biotype,
          symbol=hgnc_symbol)
@@ -35,8 +33,8 @@ system.time(qlf <- glmQLFTest(fit, coef = 2))
 qlf.top <- topTags(qlf, 10000)$table
 diff <- filter(qlf.top, !is.na(GeneID), abs(logFC)>1 & FDR < 0.05)
 
-# saveRDS(diff, './support/diff.T_N.qlf.1.005.3069.rds')
-write.csv(diff, './data/diff.T_N.qlf.1.005.3069.csv', col.names = FALSE)
+saveRDS(diff, './support/diff.T_N.qlf.1.005.3069.rds')
+# write.csv(diff, './data/diff.T_N.qlf.1.005.3069.csv', col.names = FALSE)
 
 #############################################################################################
 ##################################### Analysis #############################################
