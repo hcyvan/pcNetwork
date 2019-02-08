@@ -1,17 +1,10 @@
+
+rm(list=ls());gc()
 library(pcProfile)
 source('./R/lib.R')
 
-
-
-
 diff <- pf.get.diff()
 genes <- diff$GeneID
-
-
-
-
-
-
 
 get.gene2tf.matrix <- function(tf2gene, genes, tfs.filter=NULL){
   gene2tf.split <- split(tf2gene, tf2gene$gene)[genes]
@@ -33,6 +26,13 @@ get.gene2tf.matrix <- function(tf2gene, genes, tfs.filter=NULL){
 
 gene2tf.m <- get.gene2tf.matrix(tf2gene.gtrd, genes)
 gene2sample.m <- pf.filter.zfpkm(genes)
+
+expr <- do.call(rbind,lapply(1:ncol(gene2sample.m),function(i){
+  data.table(sample=i,gene=1:nrow(gene2sample.m),exp=gene2sample.m[,i])
+}))
+tf <- data.table(gene=1:nrow(gene2tf.m),gene2tf.m)
+data <- merge(expr,tf,by=c('gene'))
+
 
 
 #############################3
