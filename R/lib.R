@@ -127,6 +127,30 @@ pf.get.count <- function(refresh=FALSE) {
     prad.rna.count
 }
 
+##' Get log2FPKM matrix
+##'
+##' @title Get logFPKM matrix
+##' @return logFpkm matrix
+##' @author Navy Cheng
+pf.get.logFpkm <- function() {
+  readRDS('./data/prad.rna.logFpkm.rds')
+}
+
+##' Filter zFPKM matrix
+##'
+##' @title Filter logFPKM matrix
+##' @param ensembl ensembl ids
+##' @return logFPKM matrix
+##' @author Navy Cheng
+pf.filter.logFpkm <- function(ensembl, rm.na=FALSE) {
+  data <- pf.get.logFpkm()
+  index <- match(ensembl, rownames(data))
+  if (rm.na) {
+    index <- na.omit(index)
+  }
+  data[index,]
+}
+
 ##' Get z-scored log2FPKM matrix
 ##'
 ##' @title Get zFPKM matrix

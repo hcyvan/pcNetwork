@@ -15,13 +15,19 @@ fimo.tss.4 <- fread(paste0('./data/fimo.460.tss/fimo.460.tss.1000.4.tsv'), check
 fimo.tss <- rbind(fimo.tss.1, fimo.tss.2, fimo.tss.3, fimo.tss.4)
 name <- str_split(fimo.tss$sequence_name, '\\|', simplify = TRUE)
 fimo.tss[,c('gene','transcript','chromosome'):=list(name[,1], name[2], name[,3])]
+# V1 TSS + 1e-5
 fimo.tss.set <- unique(fimo.tss[p.value<=1e-5,.(tf=motif_alt_id, gene=gene)])
 saveRDS(as.data.frame(fimo.tss.set), './cache/fimo.tss.set.rds')
-# V2
+# V2 TSS + 1e-5 + N
 fimo.tss.filter <- fimo.tss[p.value<=1e-5]
 fimo.tss.filter.unique <- unique(fimo.tss.filter, by=c('motif_alt_id','gene', 'start', 'strand'))
 fimo.tss.set.2 <- fimo.tss.filter.unique[,.N, by=c('motif_alt_id','gene')][,.(tf=motif_alt_id,gene=gene,N=N)]
 saveRDS(as.data.frame(fimo.tss.set.2), './cache/fimo.tss.set.2.rds')
+# V3 TSS + 1e-4 + N
+fimo.tss.filter <- fimo.tss[p.value<=1e-4]
+fimo.tss.filter.unique <- unique(fimo.tss.filter, by=c('motif_alt_id','gene', 'start', 'strand'))
+fimo.tss.set.3 <- fimo.tss.filter.unique[,.N, by=c('motif_alt_id','gene')][,.(tf=motif_alt_id,gene=gene,N=N)]
+saveRDS(as.data.frame(fimo.tss.set.3), './cache/fimo.tss.set.3.rds')
 ### Fimo GSS
 fimo.gss <- fread('./data/fimo.460.gss.tsv', stringsAsFactors = F, check.names = TRUE)
 fimo.gss.set <- unique(fimo.gss[p.value<1e-4, .(tf=motif_alt_id, gene=sequence_name)])
@@ -61,7 +67,6 @@ scanTss <- function(gtrd,v3=FALSE) {
   } else {
       unique(gtrd[!is.na(gene), .(tf, gene)])
   }
-  
 }
 
 ###---------------------------- GTRD
