@@ -224,3 +224,25 @@ pf.filter.anno <- function(ensembl) {
   biomart <- pf.get.biomart()
   biomart[match(ensembl, biomart$ensembl_gene_id),]
 }
+
+#' pcNetwork
+getGene2tfMatrix <- function(tf2gene, genes, tfs.filter=NULL){
+  gene2tf.split <- split(tf2gene, tf2gene$gene)[genes]
+  tfs <- Reduce(union, lapply(gene2tf.split, function(x){x$tf}))
+  if (!is.null(tfs.filter)) {
+    tfs <- tfs.filter
+  }
+  gene2tf.l <- lapply(gene2tf.split, function(x){
+    tmp <- x$N[match(tfs,x$tf)]
+    if(length(tmp)==0){return(NA)}
+    tmp
+  })
+  gene2tf.m <-do.call(rbind, gene2tf.l)
+  rownames(gene2tf.m) <- genes
+  colnames(gene2tf.m) <- tfs
+  gene2tf.m[is.na(gene2tf.m)] <- 0
+  gene2tf.m
+}
+
+
+
