@@ -11,27 +11,17 @@ head(tf2gene.gtrd)
 
 cor.pairs.format <- function(s=0.3) {
     biomart <- pf.get.biomart()
-    cor.pairs <- readRDS('./cache/cor.pearson.all.zfpkm.pairs.rds')
+    cor.pairs <- readRDS('./data/cor.pearson.all.zfpkm.pairs.rds')
+    cor.pairs <- filter(cor.pairs, FDR<=0.01, abs(r)>=s)
     t1 <- biomart[match(cor.pairs$v1, biomart$ensembl_gene_id), 'gene_biotype']
     t2 <- biomart[match(cor.pairs$v2, biomart$ensembl_gene_id), 'gene_biotype']
-#    data.frame(cor.pairs,t1=t1,t2=t2) %>%
- #       filter((t1%in%pv.lncRNA), FDR<0.05, abs(r) >= s) %>%
-  #      select(lncRNA=v1, gene=v2, r=r)
-    data.frame(cor.pairs,t1=t1,t2=t2) %>%
-        filter((t1%in%pv.lncRNA)) %>%
-        select(lncRNA=v1, gene=v2, r=r)
-
+    tt <- data.frame(cor.pairs,t1=t1,t2=t2)
+    d1 <- filter(tt, t1%in%pv.lncRNA)
+    d1 <- select(d1, lncRNA=v1, gene=v2, r=r, fdr=FDR)
+    d2 <- filter(tt, t2%in%pv.lncRNA, !t1%in%pv.lncRNA)
+    d2 <- select(d2, lncRNA=v2, gene=v1, r=r, fdr=FDR)
+    rbind(d1,d2)
 }
-pc <- cor.pairs.format(0)
-pc.3 <- cor.pairs.format(0.3)
-pc.4 <- cor.pairs.format(0.4)
-pc.5 <- cor.pairs.format(0.5)
-pc.6 <- cor.pairs.format(0.6)
-pc.7 <- cor.pairs.format(0.7)
-pc.8 <- cor.pairs.format(0.8)
-pc.9 <- cor.pairs.format(0.9)
-
-
 gene2xMatrix <- function(x, gene, value, g.filter, x.filter=NULL) {
   x2gene <- data.frame(x=x,gene=gene,value=value)
   gene2x.split <- split(x2gene, x2gene$gene)[g.filter]
@@ -50,21 +40,6 @@ gene2xMatrix <- function(x, gene, value, g.filter, x.filter=NULL) {
   gene2x.m[is.na(gene2x.m)] <- 0
   gene2x.m
 }
-
-a3<-gene2xMatrix(x=pc.3$lncRNA,gene=pc.3$gene, value=pc.3$r, diff$GeneID)
-a4<-gene2xMatrix(x=pc.4$lncRNA,gene=pc.4$gene, value=pc.4$r, diff$GeneID)
-a5<-gene2xMatrix(x=pc.5$lncRNA,gene=pc.5$gene, value=pc.5$r, diff$GeneID)
-a6<-gene2xMatrix(x=pc.6$lncRNA,gene=pc.6$gene, value=pc.6$r, diff$GeneID)
-a7<-gene2xMatrix(x=pc.7$lncRNA,gene=pc.7$gene, value=pc.7$r, diff$GeneID)
-a8<-gene2xMatrix(x=pc.8$lncRNA,gene=pc.8$gene, value=pc.8$r, diff$GeneID)
-a9<-gene2xMatrix(x=pc.9$lncRNA,gene=pc.9$gene, value=pc.9$r, diff$GeneID)
-
-a<-gene2xMatrix(x=pc$lncRNA,gene=pc$gene, value=pc$r, diff$GeneID)
-
-
-b<-gene2xMatrix(x=tf2gene.gtrd$tf,gene=tf2gene.gtrd$gene, value=tf2gene.gtrd$N, diff$GeneID)
-
-
 multicor <- function(m1, m2=NULL, method= c('pearson', 'kendall', 'spearman'), rds=NA, rewrite=FALSE, verbose=TRUE) {
   if(!is.na(rds)) {
     if(file.exists(rds) && !rewrite) {
@@ -113,36 +88,53 @@ multicor <- function(m1, m2=NULL, method= c('pearson', 'kendall', 'spearman'), r
   }
   ret
 }
-cs<-multicor(a,b,rds='./data/lnc2tf.cs.cor.rds',method = 'spearman')
-c<-multicor(a,b,rds='./data/lnc2tf.cor.rds')
 
-c3<-multicor(a3,b,rds='./data/lnc2tf.cor.3.rds')
-c4<-multicor(a4,b,rds='./data/lnc2tf.cor.4.rds')
-c5<-multicor(a5,b,rds='./data/lnc2tf.cor.5.rds')
-c6<-multicor(a6,b,rds='./data/lnc2tf.cor.6.rds')
-c7<-multicor(a7,b,rds='./data/lnc2tf.cor.7.rds')
-c8<-multicor(a8,b,rds='./data/lnc2tf.cor.8.rds')
-c9<-multicor(a9,b,rds='./data/lnc2tf.cor.9.rds')
+pc3 <- cor.pairs.format(0.3)
+pc4 <- cor.pairs.format(0.4)
+pc5 <- cor.pairs.format(0.5)
+pc6 <- cor.pairs.format(0.6)
+pc7 <- cor.pairs.format(0.7)
+pc8 <- cor.pairs.format(0.8)
+pc9 <- cor.pairs.format(0.9)
 
-filter(c,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(cs,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+a3<-gene2xMatrix(x=pc3$lncRNA,gene=pc3$gene, value=pc3$r, diff$GeneID)
+a4<-gene2xMatrix(x=pc4$lncRNA,gene=pc4$gene, value=pc4$r, diff$GeneID)
+a5<-gene2xMatrix(x=pc5$lncRNA,gene=pc5$gene, value=pc5$r, diff$GeneID)
+a6<-gene2xMatrix(x=pc6$lncRNA,gene=pc6$gene, value=pc6$r, diff$GeneID)
+a7<-gene2xMatrix(x=pc7$lncRNA,gene=pc7$gene, value=pc7$r, diff$GeneID)
+a8<-gene2xMatrix(x=pc8$lncRNA,gene=pc8$gene, value=pc8$r, diff$GeneID)
+a9<-gene2xMatrix(x=pc9$lncRNA,gene=pc9$gene, value=pc9$r, diff$GeneID)
 
-filter(c3,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c4,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c5,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c6,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c7,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c8,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-filter(c9,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+b<-gene2xMatrix(x=tf2gene.gtrd$tf,gene=tf2gene.gtrd$gene, value=tf2gene.gtrd$N, diff$GeneID)
 
-bb<- b[,'MYC']
-aa3 <- a3[,'ENSG00000225177']
-aa9 <- a9[,'ENSG00000225177']
+cs3<-multicor(a3,b,rds='./data/lnc2tf.cs.cor.0.3.rds',method = 'spearman')
+cs4<-multicor(a4,b,rds='./data/lnc2tf.cs.cor.0.4.rds',method = 'spearman')
+cs5<-multicor(a5,b,rds='./data/lnc2tf.cs.cor.0.5.rds',method = 'spearman')
+cs6<-multicor(a6,b,rds='./data/lnc2tf.cs.cor.0.6.rds',method = 'spearman')
+cs7<-multicor(a7,b,rds='./data/lnc2tf.cs.cor.0.7.rds',method = 'spearman')
+cs8<-multicor(a8,b,rds='./data/lnc2tf.cs.cor.0.8.rds',method = 'spearman')
+cs9<-multicor(a9,b,rds='./data/lnc2tf.cs.cor.0.9.rds',method = 'spearman')
+
+####################### TF lncRNA cor
+tfs <- unique(tf2gene.gtrd$tf)
+tfs.symbol<-pf.symbol2emsembl(tfs)
+tf.zfpkm<-na.omit(pf.filter.zfpkm(tfs.symbol))
+rownames(tf.zfpkm) <- pf.ensembl2symbol(rownames(tf.zfpkm))
+lncRNA.zfpkm <- pf.filter.zfpkm(lncRNA$GeneID)
+
+cor.lnc2tf <- multicor(t(lncRNA.zfpkm),t(tf.zfpkm),rds='./data/cor.lnc2tf.rds')
+cor.lnc2tf <- filter(cor.lnc2tf, FDR < 0.05)%>%mutate(key=paste0(v1,v2))
+#######################
+
+cs3 <- filter(cs3,FDR<=0.05)%>%mutate(key=paste0(v1,v2))
+final <- filter(cs3,!key%in%cor.lnc2tf$key)
+filter(final,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
 
 
+final.n<- sapply(split(final, as.vector(final$v2)),function(x){
+    nrow(x)
+})
 
-
-
-
-
-
+cs3.n<-sapply(split(cs3, as.vector(cs3$v2)),function(x){
+    nrow(x)
+})
