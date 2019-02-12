@@ -131,10 +131,25 @@ final <- filter(cs3,!key%in%cor.lnc2tf$key)
 filter(final,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
 
 
-final.n<- sapply(split(final, as.vector(final$v2)),function(x){
-    nrow(x)
-})
+dim(b) #gene TF
+dim(a3) #gene lncRNA
+length(final.n)
+dim(cs3)
+dim(final)
 
-cs3.n<-sapply(split(cs3, as.vector(cs3$v2)),function(x){
+
+final.n<- sort(sapply(split(final, as.vector(final$v2)),function(x){
     nrow(x)
-})
+}))
+
+cs3.n<-sort(sapply(split(cs3, as.vector(cs3$v2)),function(x){
+    nrow(x)
+}))
+
+cs3.n[names(cs3.n)%in%ac$TF]
+final.n[names(final.n)%in%ac$TF]
+
+###########333
+ac<-read.delim('./reports/thesis/tfa.diff.55.csv', stringsAsFactors=FALSE,sep=',')
+
+################################
