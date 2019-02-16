@@ -70,6 +70,10 @@ beadchip <- list(
   diffscore=distinct(inner_join(prob.symbol, diffscore.raw, by='prob'), symbol, .keep_all = TRUE)
 )
 
+valid.detection.pval <- beadchip$detection.pval[,c(-1,-2)]<0.05
+beadchip$value[,c(-1,-2)][!valid.detection.pval] <- 0
+saveRDS(beadchip, './data/beachip.rds')
+
 
 big.diffscore <- abs(beadchip$diffscore[,c(-1,-2)])>13
 valid.detection.pval <- beadchip$detection.pval[,c(-1,-2)]<0.05
@@ -86,9 +90,9 @@ dge <- lapply(as.data.frame(diff.gene), function(x){
 dge.all <- Reduce(union, dge)
 dge.early <- Reduce(union, dge[c('t20min','t40min','t1h','t2h','t4h')])
 dge.late <- Reduce(union, dge[c('t8h','t16h','t24h','t48h')])
+dge.both <- intersect(dge.early,dge.late)
 dge.early.only <- setdiff(dge.early, dge.both)
 dge.late.only <- setdiff(dge.late, dge.both)
-dge.both <- intersect(dge.early,dge.late)
 
 length(dge.early) # 4009
 length(dge.late) # 3501
@@ -167,7 +171,7 @@ get.ar.target <- function(tf2gene) {
 
 
 ar.target.gtrd <- get.ar.target(tf2gene.gtrd)
-ar.target.jasper <- get.ar.target(tf2gene.jasper)
+ar.target.jasper <- get.ar.target(tf2gene.jaspar)
 ar.target.trrust <- get.ar.target(tf2gene.trrust)
 
 length(ar.target.gtrd)

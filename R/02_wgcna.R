@@ -1,23 +1,23 @@
-source('./lib/globals.R')
 source('./lib/helpers.R')
 
 library(WGCNA)
 
-diff.gene <- helper.get.lncRNA.PCG()
-genes.fpkm <- helper.get.diff.fpkm()
-biomart <- helper.get.biomart()
+diff.gene <- pf.get.diff()
+zfpkm <- pf.filter.zfpkm(diff.gene$GeneID)
+biomart <- pf.filter.anno(diff.gene$GeneID)
 
 # ----------------------------- WGCNA -------------------------------------
 options(stringsAsFactors = FALSE)
 enableWGCNAThreads()
 
-datExpr <- t(as.matrix(genes.fpkm))
+datExpr <- t(as.matrix(zfpkm))
 # ----------------------------
 corType <- "pearson"
 corFnc = ifelse(corType=="pearson", cor, bicor)
 maxPOutliers <- ifelse(corType=="pearson",1,0.05)
 robustY = ifelse(corType=="pearson",T,F)
-networkType <- 'unsigned'
+# networkType <- 'unsigned'
+networkType <- 'signed hybrid'
 
 resultPath <- './reports/wgcna/'
 TOMfile <- './cache/diff.qlf.2877.tom'
@@ -30,7 +30,7 @@ sft = pickSoftThreshold(datExpr,
                         corFnc = corFnc,
                         powerVector = powers,
                         verbose = 5)
-tiff(paste0(resultPath, 'sft.tiff'), width = 862, height = 571)
+# tiff(paste0(resultPath, 'sft.tiff'), width = 862, height = 571)
 par(mfrow = c(1,2))
 cex1 = 0.9
 plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
@@ -42,7 +42,7 @@ plot(sft$fitIndices[,1], sft$fitIndices[,5],
      xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
      main = paste("Mean connectivity"))
 text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
-dev.off()
+# dev.off()
 ## ------------------------- Find Modules ----------------------------
 system.time(
   net <- blockwiseModules(datExpr,
@@ -69,13 +69,13 @@ rm(TOM)
 ## -------------------------------
 sizeGrWindow(2, 9)
 colors <- labels2colors(net$colors)
-tiff(paste0(resultPath, 'clusterDendrogram.tiff'), width = 862, height = 571)
+# tiff(paste0(resultPath, 'clusterDendrogram.tiff'), width = 862, height = 571)
 plotDendroAndColors(net$dendrograms[[1]], colors[net$blockGenes[[1]]], 'Moudle colors',
                     dendroLabels = FALSE,
                     hang= 0.3,
                     addGuide = TRUE,
                     guideHang = 0.05)
-dev.off()
+# dev.off()
 
 ## ----    Module Eigengene relationship / Eigengene Networks ---------
 MEs <- moduleEigengenes(datExpr, colors, softPower = sft$powerEstimate)$eigengenes
