@@ -159,7 +159,23 @@ win.metafile(filename=paste0('./reports/thesis/androgen_response_gene_B.emf'),wi
 plot_grid(p1,  grobTree(p2), labels = c('A','B'), label_size = 30)
 dev.off()
 
-#####################################################################################
+##################################################################################
+labels <- c('0h','1h', '2h', '4h', '8h', '16h', '24h', '48h')
+irf1<-unlist(filter(beadchip$value,symbol=='IRF1')[,c(3,6:12)])
+
+df <- data.frame(point=factor(labels, levels=labels), num=irf1)
+rownames(df) <- NULL
+p1 <- ggplot(df, aes(x=point, y=num, group=1)) +
+  geom_line(size=1) +
+  geom_point() +
+  labs(x=NULL,y='Normalized Signal Intensity') +
+  theme_classic(base_size = 20)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
+win.metafile(filename=paste0('./reports/thesis/irf1.emf'),width=10,height=8)
+plot_grid(p1)
+dev.off()
+
+##############################################################
 library(pcProfile)
 
 get.ar.target <- function(tf2gene) {
