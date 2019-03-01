@@ -98,10 +98,16 @@ pf.symbol2emsembl <- function(symbol) {
 ##' @param type
 ##' @return differential expression genes filtered by GeneType
 ##' @author Navy Cheng
-pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA')) {
+pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA'),n='5946') {
     type <- unique(match.arg(type, several.ok=TRUE))
     # diff <- readRDS('./cache/diff.3193.rds')
-    diff <- readRDS('./support/diff.T_N.qlf.1.005.3069.rds')
+    if (n=='5946') {
+      diff <- readRDS('./support/diff.T_N.qlf.log1.5.005.5946.rds')
+    } else if (n=='3096') {
+      diff <- readRDS('./support/diff.T_N.qlf.1.005.3069.rds')
+    } else {
+      stop()
+    }
     if ('all'%in%type){
         diff
     } else {
@@ -133,7 +139,9 @@ pf.get.count <- function(refresh=FALSE) {
 ##' @return logFpkm matrix
 ##' @author Navy Cheng
 pf.get.logFpkm <- function() {
-  readRDS('./data/prad.rna.logFpkm.rds')
+  .pf.cache('.logFpkm', func = function(){
+    readRDS('./data/prad.rna.logFpkm.rds')
+  })
 }
 
 ##' Filter zFPKM matrix
@@ -157,7 +165,9 @@ pf.filter.logFpkm <- function(ensembl, rm.na=FALSE) {
 ##' @return zfpkm matrix
 ##' @author Navy Cheng
 pf.get.zfpkm <- function() {
-  readRDS('./data/prad.rna.zfpkm.rds')
+  .pf.cache('.zfpkm', func = function(){
+    readRDS('./data/prad.rna.zfpkm.rds')
+  })
 }
 
 ##' Filter zFPKM matrix
@@ -244,5 +254,76 @@ getGene2tfMatrix <- function(tf2gene, genes, tfs.filter=NULL){
   gene2tf.m
 }
 
+##' calculate multiple cor
+##' 
+##' @title Filter gene annotation
+##' @param m1 matrix,sample is column
+##' @param m2 matrix,sample is column
+##' @return annotations
+##' @author navych
+pf.multicor <- function(m1, m2=NULL, method= c('pearson', 'kendall', 'spearman'), rds=NA, rewrite=FALSE, verbose=TRUE) {
+  if(!is.na(rds)) {
+    if(file.exists(rds) && !rewrite) {
+      message(paste('Load data from', rds))
+      return(readRDS(rds))
+    }
+  }
+  method <- match.arg(method)
+  if (is.null(m2)) {
+    data1 <- data2 <- as.matrix(m1)
+  } else {
+    data1 <- as.matrix(m2)
+    data2 <- as.matrix(m1)
+  }
+  r <- matrix(nrow=ncol(data2),ncol=ncol(data1))
+  if (verbose) {
+    total <- ncol(data1)
+    message(paste('Calculating:', total,'rounds needed!'))
+  }
+  i <- 0
+  p <- apply(data1,2,function(x){
+    i<<-i+1
+    t0 <- Sys.time()
+    if (verbose) {
+      cat(paste0(i,'/',total,'\n'))
+    }
+    j<-0
+    apply(data2,2,function(y){
+      j<<-j+1
+      if (!is.null(data2)|i > j) {
+        test <- cor.test(x,y,method = method)
+        r[j,i] <<- test$estimate
+        test$p.value
+      } else {
+        NaN
+      }
+    })
+  })
+  dimnames(r) <- dimnames(p)
+  list(r,p)
+  r.melt <- reshape2::melt(r) %>% filter(!is.na(value))
+  p.melt <- reshape2::melt(p) %>% filter(!is.na(value))
+  ret <- data.frame(v1=r.melt$Var1, v2=r.melt$Var2, r=r.melt$value, p.value=p.melt$value, FDR=p.adjust(p.melt$value, method = 'BH'))
+  if (!is.na(rds)) {
+    saveRDS(ret, rds)
+  }
+  ret
+}
+
+pf.get.ac<-function(){
+  readRDS('data/tf.ac.rds')
+}
+
+pf.get.dug<-function(){
+  readRDS('./data/coxph.dfs.nui.dug.rds')
+}
+pf.get.oug<-function(){
+  readRDS('./data/coxph.os.nui.oug.rds')
+}
+pf.get.sugid<-function(){
+  oug<-pf.get.oug()
+  dug<-pf.get.dug()
+  unique(union(oug$gene,dug$gene))
+}
 
 

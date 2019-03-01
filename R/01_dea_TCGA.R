@@ -12,7 +12,7 @@ group <- c(rep('N',52),rep('T', 499))
 genes <- biomart[match(rownames(counts), biomart$ensembl_gene_id),] %>%
   dplyr::select(GeneID=ensembl_gene_id,
          GeneType=gene_biotype,
-         symbol=hgnc_symbol)
+         symbol=external_gene_name)
 
 
 y <- DGEList(counts = counts, genes = genes)
@@ -32,13 +32,15 @@ system.time(qlf <- glmQLFTest(fit, coef = 2))
 
 qlf.top <- topTags(qlf, 10000)$table
 diff <- filter(qlf.top, !is.na(GeneID), abs(logFC)>1 & FDR < 0.05)
+diff2 <- filter(qlf.top, !is.na(GeneID), abs(logFC)>log2(1.5) & FDR < 0.05)
 
 saveRDS(diff, './support/diff.T_N.qlf.1.005.3069.rds')
+saveRDS(diff2, './support/diff2.T_N.qlf.1.005.3069.rds')
+diff <- readRDS('./support/diff.T_N.qlf.1.005.3069.rds')
 # write.csv(diff, './data/diff.T_N.qlf.1.005.3069.csv', col.names = FALSE)
-
-#############################################################################################
-##################################### Analysis #############################################
-###########################################################################################
+############################################################################
+##################################### Analysis #############################
+############################################################################
 # diff gene statistics
 diff.pcg <- filter(diff, GeneType%in%pv.pcg)
 diff.lncRNA <- filter(diff, GeneType%in%pv.lncRNA)
@@ -101,4 +103,44 @@ a<-heatmap.2(m,
             Colv=FALSE,
             lhei = c(1,4),
             col=greenred)
+dev.off()
+
+############################################################################
+##################################### micorarray ###########################
+############################################################################
+raw <- read.delim('./data/chip/Normalized_DATA.2.txt',stringsAsFactors = FALSE)
+raw<-filter(raw,GeneSymbol!='.'&GeneSymbol!='')%>%distinct(GeneSymbol,.keep_all = TRUE)
+data<-raw[,c('B50419P_N','B55903P_N','B55930P_N','B50419T_N','B55903T_N','B55930T_N')]
+rownames(data)<- raw$GeneSymbol
+
+group <- c(rep('P',3),rep('T',3))
+design <- model.matrix(~factor(group))
+fit <- lmFit(data,design)
+fit.c <- contrasts.fit(fit,coef=2)
+fit.e <- eBayes(fit.c)
+diff.chip<-topTable(fit.e,n=10000,genelist = raw[,c('GeneSymbol','Type')])%>%filter(P.Value<0.05,abs(logFC)>=1)
+
+# dim(filter(diff.chip,Type=='lncRNA'))
+# dim(filter(diff.chip,Type=='mRNA'))
+# length(intersect(diff.pcg$symbol,diff.chip$GeneSymbol))
+# length(intersect(diff.lncRNA$symbol,diff.chip$GeneSymbol))
+dim(diff.chip)
+length(intersect(diff2$symbol,diff.chip$GeneSymbol))
+inter.diff<-intersect(diff$symbol,diff.chip$GeneSymbol)
+
+exp<-as.matrix(data[match(inter.diff,rownames(data)),])
+png(filename=paste0('./reports/thesis/inter_diff_gene_heatmap.png'),width=600,height=600)
+win.metafile(filename='./reports/thesis/inter_diff_gene_heatmap.emf',width=7,height=7)
+heatmap.2(exp,
+          key.title = NA,
+          key.xlab = 'Z-Score of signal',
+          key.ylab = NA,
+          trace = 'none',
+          scale = 'row',
+          srtCol=45,
+          cexCol = 1.1,
+          # adjCol = c(0.5,0.5),
+          Colv=FALSE,
+          lhei = c(1,4),
+          col=greenred)
 dev.off()

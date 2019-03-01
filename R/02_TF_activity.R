@@ -48,7 +48,7 @@ lmTFA <- function(gene2tf, gene2sample, cache=NULL){
   }
 }
 
-model2matrix <- function(model) {
+model2matrix <- function(model,all=FALSE) {
   model.rm.na <- model[!is.na(model)]
   value <- sapply(model.rm.na, function(x){
     f <- x[,1]
@@ -58,7 +58,11 @@ model2matrix <- function(model) {
   p<-sapply(model.rm.na, function(x){
     x[,4]
   })
-  value[rowSums(p<0.05)>=quantile(rowSums(p<0.05),0.95),][-1,]
+  if (all) {
+    value[-1,]
+  }else {
+    value[rowSums(p<0.05)>=quantile(rowSums(p<0.05),0.95),][-1,]
+  }
 }
 
 mergeTFAM <- function(model.1, model.2) {
@@ -89,6 +93,36 @@ model.gtrd.n <- lmTFA(gene2tf.gtrd.m, gene2sample.m[,500:551], cache = './data/t
 model.gtrd.t <- lmTFA(gene2tf.gtrd.m, gene2sample.m[,1:499], cache = './data/tfa.model.gtrd.t.rds')
 m.gtrd <- mergeTFAM(model.gtrd.t, model.gtrd.n)
 # saveRDS(m.gtrd,'./data/tfa.m.gtrd.rds')
+
+#######################3
+diff2<-readRDS('./support/diff2.T_N.qlf.1.005.3069.rds')
+
+genes2 <- diff2$GeneID
+gene2sample.m <- pf.filter.zfpkm(genes2)
+gene2tf.gtrd.m <- get.gene2tf.matrix(tf2gene.gtrd, genes2)
+
+model.gtrd.n <- lmTFA(gene2tf.gtrd.m, gene2sample.m[,500:551], cache = './data/tfa2.model.gtrd.n.rds')
+model.gtrd.t <- lmTFA(gene2tf.gtrd.m, gene2sample.m[,1:499], cache = './data/tfa2.model.gtrd.t.rds')
+m.gtrd <- mergeTFAM(model.gtrd.t, model.gtrd.n)
+model2matrix(model.gtrd.n)->m.gtrd.n
+model2matrix(model.gtrd.t)->m.gtrd.t
+m.gtrd.all<-model2matrix(c(model.gtrd.n,model.gtrd.t))
+
+
+
+##
+model<-c(model.gtrd.n,model.gtrd.t)
+model.rm.na <- model[!is.na(model)]
+value <- sapply(model.rm.na, function(x){
+  f <- x[,1]
+  f[x[,4] > 0.05] <- 0
+  f
+})
+p<-sapply(model.rm.na, function(x){
+  x[,4]
+})
+value[rowSums(p<0.05)>=quantile(rowSums(p<0.05),0.95),][-1,]
+value[-1,]
 #############################################3
 m <- m.gtrd
 samples <- colnames(m)
