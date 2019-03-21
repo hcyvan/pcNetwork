@@ -8,7 +8,7 @@ source('./R/lib.R')
 
 biomart <- data.table(pf.get.biomart())
 
-tf2gene.jasper <- data.table(tf2gene.jasper)
+tf2gene.jasper <- data.table(tf2gene.jaspar)
 tf2gene.gtrd <- data.table(tf2gene.gtrd)
 tf2gene.trrust <- data.table(tf2gene.trrust)
 
@@ -67,9 +67,9 @@ T<-venn.diagram(list(JASPER=tf2gene.jasper$tf,
                 reverse=TRUE)
 
 # png("./reports/thesis//tf2gene.png", height = 800, width = 800)
-win.metafile(filename="./reports/thesis//tf2gene.emf",width=7,height=7)
+# win.metafile(filename="./reports/thesis//tf2gene.emf",width=7,height=7)
 plot_grid(p1, p2, p3, grobTree(T), labels = c('A','B','C','D'), label_size = 20)
-dev.off()
+# dev.off()
 
 diff <- pf.get.diff()
 

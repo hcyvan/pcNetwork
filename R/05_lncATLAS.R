@@ -14,4 +14,5 @@ atlas.ratio2.mean <- sapply(split(atlas,as.vector(atlas$ENSEMBL.ID)), function(g
 atlas.ratio2.mean<-atlas.ratio2.mean[!is.na(atlas.ratio2.mean)]
 
 loc <- data.frame(id=names(atlas.ratio2.mean), rci=atlas.ratio2.mean)
+rownames(loc)<-NULL
 saveRDS(loc,file = './cache/cell.location.rds')

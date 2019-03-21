@@ -1,6 +1,7 @@
 library(dplyr)
 library(gplots)
 library(ggplot2)
+library(cowplot)
 library(illuminaHumanv3.db)
 library(VennDiagram)
 
@@ -97,6 +98,8 @@ dge.late.only <- setdiff(dge.late, dge.both)
 length(dge.early) # 4009
 length(dge.late) # 3501
 length(dge.both) # 2193
+ar.diff<-list(early=dge.early,late=dge.late,inter=dge.both)
+saveRDS(ar.diff,'support/ar.diff.rds')
 
 diff.gene.index <- apply(diff.gene,1, sum)>=1
 beadchip.diff <- list(
@@ -113,6 +116,7 @@ png(filename=paste0('./reports/thesis/androgen_response_gene_A.png'),width=600,h
 m <- as.matrix(beadchip.diff$diffscore[,4:12])
 colnames(m) <- labels
 par(cex.main=50)
+m<-m[,c(-1)]
 heatmap.2(m,
           scale = 'row',
           Colv=FALSE,
@@ -125,7 +129,7 @@ heatmap.2(m,
           key.ylab = NA,
           key.par = list(),
           lhei = c(1,4),
-          colsep=5)
+          colsep=4)
 dev.off()
 
 ##################### Time course distribution
@@ -153,11 +157,11 @@ p2 <- venn.diagram(list(EARLY=dge.early,
                    reverse=TRUE)
 
 
-dev.off()
+# dev.off()
 # png(filename=paste0('./reports/thesis/androgen_response_gene_B.png'),width=1200,height=600)
-win.metafile(filename=paste0('./reports/thesis/androgen_response_gene_B.emf'),width=14,height=7)
+# win.metafile(filename=paste0('./reports/thesis/androgen_response_gene_B.emf'),width=14,height=7)
 plot_grid(p1,  grobTree(p2), labels = c('A','B'), label_size = 30)
-dev.off()
+# dev.off()
 
 ##################################################################################
 labels <- c('0h','1h', '2h', '4h', '8h', '16h', '24h', '48h')
@@ -171,9 +175,9 @@ p1 <- ggplot(df, aes(x=point, y=num, group=1)) +
   labs(x=NULL,y='Normalized Signal Intensity') +
   theme_classic(base_size = 20)+
   theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5))
-win.metafile(filename=paste0('./reports/thesis/irf1.emf'),width=10,height=8)
+# win.metafile(filename=paste0('./reports/thesis/irf1.emf'),width=10,height=8)
 plot_grid(p1)
-dev.off()
+# dev.off()
 
 ##############################################################
 library(pcProfile)

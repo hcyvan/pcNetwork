@@ -64,7 +64,7 @@ pf.get.biomart <- function() {
 ##' @param ensembl 
 pf.ensembl2symbol <- function(ensembl) {
     biomart <- pf.get.biomart()
-    biomart[match(ensembl,biomart$ensembl_gene_id),]$hgnc_symbol
+    biomart[match(ensembl,biomart$ensembl_gene_id),]$external_gene_name
 }
 
 ##' Tranlate gene ensembl id to biotype
@@ -79,6 +79,11 @@ pf.ensembl2biotype <- function(ensembl) {
     biomart[match(ensembl,biomart$ensembl_gene_id),]$gene_biotype
 }
 
+pf.ensembl2chr <- function(ensembl) {
+  biomart <- pf.get.biomart()
+  biomart[match(ensembl,biomart$ensembl_gene_id),]$chromosome_name
+}
+
 ##' Covert symbol to gene ensembl id
 ##'
 ##' Covert symbol to gene ensembl id
@@ -88,7 +93,7 @@ pf.ensembl2biotype <- function(ensembl) {
 ##' @author Navy Cheng
 pf.symbol2emsembl <- function(symbol) {
     biomart <- pf.get.biomart()
-    biomart[match(symbol,biomart$hgnc_symbol),]$ensembl_gene_id
+    biomart[match(symbol,biomart$external_gene_name),]$ensembl_gene_id
 }
 
 
@@ -121,6 +126,10 @@ pf.get.diff <- function(type=c('all', 'pcg', 'lncRNA'),n='5946') {
         }
         data
     }
+}
+
+pf.get.diff.ar<-function(){
+  readRDS('support/ar.diff.rds')
 }
 
 ##' Get TCGA-PRAD count matrix
@@ -325,5 +334,46 @@ pf.get.sugid<-function(){
   dug<-pf.get.dug()
   unique(union(oug$gene,dug$gene))
 }
+pf.get.lnc.cis<-function(up=1000,uniq=TRUE){
+  lnc.gene.raw<-readRDS('support/lnc.cis.origin.rds')
+  lnc.gene<-data.frame(lncRNA=as.vector(lnc.gene.raw$lncRNA),
+                       gene=as.vector(lnc.gene.raw$gene),
+                       dist=lnc.gene$dist,
+                       stringsAsFactors = FALSE)
+  lnc.gene<-filter(lnc.gene,dist<=up)
+  lnc.cis<-filter(lnc.gene,lncRNA!=gene)
+  if(uniq){
+    lnc.cis<-distinct(lnc.cis,lncRNA,gene,.keep_all = TRUE)
+  }
+  lnc.cis
+}
+
+pf.get.lnc.trans<-function(){
+  lnc.trans.raw<-read.delim('data/lncRNA.DNA.triplex.txt',
+                            stringsAsFactors = FALSE)
+  mutate(lnc.trans.raw,lncRNA=Sequence.ID, gene=Duplex.ID)%>%
+    distinct(lncRNA,gene,.keep_all = TRUE)%>%
+    select(lncRNA,gene)
+}
+pf.get.lnc.cis.cor<- function(){
+  readRDS('support/lnc.cis.cor.rds')
+}
+pf.get.lnc.trans.cor<- function(){
+  readRDS('support/lnc.trans.cor.rds')
+}
+pf.get.lnctf.cor.indirect<-function(){
+  readRDS('support/lnctf.cor.indirect.rds')
+}
+pf.get.ltg.cis<-function(){
+  readRDS('support/lnc.tf.gene.cis.rds')
+}
+pf.get.ltg.trans<-function(){
+  readRDS('support/lnc.tf.gene.trans.rds')
+}
+
+pf.get.loc<-function(){
+  readRDS('./cache/cell.location.rds')
+}
+
 
 

@@ -8,6 +8,7 @@ source('./R/lib.R')
 diff<- pf.get.diff()
 lncRNA <- pf.get.diff('lncRNA')
 actf <- pf.get.ac()
+sugid<-pf.get.sugid()
 
 data(tf2gene.gtrd)
 head(tf2gene.gtrd)
@@ -73,7 +74,7 @@ a8<-gene2xMatrix(x=pc8$lncRNA,gene=pc8$gene, value=pc8$r, diff$GeneID)
 b<-gene2xMatrix(x=tf2gene$tf,gene=tf2gene$gene, value=tf2gene$N, diff$GeneID)
 
 cs3.abs<-pf.multicor(abs(a3),b,rds='./data/lnc2tf.cs5946.cor.3.abs.rds',method = 'spearman')
-cs4.abs<-pf.multicor(abs(a4),b,rds='./data/lnc2tf.cs5946.cor.4.abs.rds',method = 'spearman')
+cs4.abs<-pf.multicor(abs(a4),b,rds='./data/lnc2actf.cs5946.cor.4.abs.rds',method = 'spearman')
 cs5.abs<-pf.multicor(abs(a5),b,rds='./data/lnc2tf.cs5946.cor.5.abs.rds',method = 'spearman')
 cs6.abs<-pf.multicor(abs(a6),b,rds='./data/lnc2actf.cs5946.cor.6.abs.rds',method = 'spearman')
 cs7.abs<-pf.multicor(abs(a7),b,rds='./data/lnc2tf.cs5946.cor.7.abs.rds',method = 'spearman')
@@ -81,30 +82,189 @@ cs8.abs<-pf.multicor(abs(a8),b,rds='./data/lnc2tf.cs5946.cor.8.abs.rds',method =
 cs9.abs<-multicor(abs(a9),b,rds='./data/lnc2tf.cs.cor.9.abs.rds',method = 'spearman')
 
 
-filter(cs6.abs,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+filter(cs4.abs,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
 
 ########################33
-lnctfv1<-filter(cs6.abs,FDR<0.01)
-####################### TF lncRNA cor
+lnctfv1<-filter(cs4.abs,FDR<0.01)
+dim(lnctfv1)
+filter(tf2gene, tf=='MYC',gene=='ENSG00000099840')
+################# lncRNA vs. TF  (Direct correlation)
 actf.zfpkm<-na.omit(pf.filter.zfpkm(pf.symbol2emsembl(actf$ID)))
 rownames(actf.zfpkm) <- pf.ensembl2symbol(rownames(actf.zfpkm))
 lncRNA.zfpkm <- pf.filter.zfpkm(lncRNA$GeneID)
 cor.lnc2actf <- pf.multicor(t(lncRNA.zfpkm),t(actf.zfpkm),rds='./data/cor.lnc2actf.rds')
-cor.lnc2actf <- filter(cor.lnc2tf, FDR < 0.05)%>%mutate(key=paste0(v1,v2))
-#######################
-lnctfv2<-mutate(lnctfv1,key=paste0(v1,v2))%>%filter(FDR<=0.05,!key%in%cor.lnc2tf$key)
-dim(lnctfv2)
-filter(lnctfv2,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
-tfs0<- sort(sapply(split(lnctfv2, as.vector(lnctfv2$v2)),function(x){nrow(x)}))
-lncs0<- sort(sapply(split(lnctfv2, as.vector(lnctfv2$v1)),function(x){nrow(x)}))
+cor.lnc2actf <- filter(cor.lnc2actf, FDR < 0.05)%>%mutate(key=paste0(v1,v2))
+################ lncRNA vs. TF  (Indirect correlation)
+lnctf.cor.indirect<-mutate(lnctfv1,key=paste0(v1,v2))%>%filter(FDR<=0.05,!key%in%cor.lnc2actf$key)
+# saveRDS(lnctf.cor.indirect,'support/lnctf.cor.indirect.rds')
+dim(lnctf.cor.indirect)
+filter(lnctf.cor.indirect,v2=='MYC',v1%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+tfs0<- sort(sapply(split(lnctf.cor.indirect, as.vector(lnctf.cor.indirect$v2)),function(x){nrow(x)}))
+lncs0<- sort(sapply(split(lnctf.cor.indirect, as.vector(lnctf.cor.indirect$v1)),function(x){nrow(x)}))
 length(tfs0)
 length(lncs0)
 lncs0['ENSG00000225177']
 tfs0['MYC']
 tfs0['AR']
 tfs0['TP53']
+############################
+lnc845.zfpkm<-na.omit(pf.filter.zfpkm(names(lncs0)))
+cor.lnc2lnc <- pf.multicor(t(lnc845.zfpkm),rds='./data/cor.lnc2lnc.rds')
+dim(cor.lnc2lnc)
+cor.lnc2lnc <- filter(cor.lnc2lnc, FDR < 0.05)
+dim(cor.lnc2lnc)
+mm<-cor(t(lnc845.zfpkm))
+s<-sample(1:845,100)
+a<-c("ENSG00000225177","ENSG00000277383","ENSG00000270933")
+filter(cor.lnc2lnc,v1%in%a,v2%in%a)
+
+########################### Indirect + Cis
+lnc.cis.cor<-pf.get.lnc.cis.cor()
+head(lnctf.cor.indirect);dim(lnctf.cor.indirect)
+head(lnc.cis.cor);dim(lnc.cis.cor)
+head(tf2gene);dim(tf2gene)
+
+lnc.tf.gene.cis<-left_join(lnc.cis.cor,lnctf.cor.indirect,by=c('v1'='v1'))%>%
+  select(lnc=v1,tf=v2.y,gene=v2.x)%>%
+  mutate(key=paste0(tf,gene))%>%
+  filter(key%in%paste0(tf2gene$tf,tf2gene$gene))%>%
+  select(lnc,tf,gene)
+saveRDS(lnc.tf.gene.cis,'support/lnc.tf.gene.cis.rds')
+# #ENSG00000227392   TAF1 ENSG00000105707
+# filter(lnc.cis.cor,v1=='ENSG00000227392',v2=='ENSG00000105707')
+# filter(tf2gene,tf=='TAF1',gene=='ENSG00000105707')
+# filter(lnctf.cor.indirect,v1=='ENSG00000227392',v2=='TAF1')
+
+dim(a<-distinct(lnc.tf.gene.cis,lnc,tf))
+length(unique(as.vector(a$lnc)))
+length(unique(as.vector(a$tf)))
+dim(lnc.tf.gene.cis)
+
+#-----------
+tmp<- lnc.tf.gene.cis
+tmp$lnc<-pf.ensembl2symbol(tmp$lnc)
+tmp$gene<-pf.ensembl2symbol(tmp$gene)
+a<-data.frame(v1=c(as.vector(tmp$lnc),
+                   as.vector(tmp$tf)),
+              v2=c(as.vector(tmp$tf),
+                   as.vector(tmp$gene)),
+              key=c(rep('b',nrow(tmp)),rep('i',nrow(tmp))),
+              stringsAsFactors = FALSE)
+nodes<-unique(c(a$v1,a$v2))
+b<-data.frame(node=nodes,
+              type=ifelse(nodes%in%lncRNA$symbol,'lncRNA',
+                          ifelse(nodes%in%ac$ID,'tf','gene')),
+              color=ifelse(nodes%in%pf.ensembl2symbol(sugid),'surv',
+                           ifelse(nodes%in%lncRNA$symbol,'normal-lnc',
+                                  ifelse(nodes%in%ac$ID,'normal-tf','normal-gene'))),
+              stringsAsFactors=FALSE)
+write.csv(a, 'reports/thesis/cyto/lnc.tf.gene.cis.edge.csv',row.names = FALSE,quote=FALSE)
+write.csv(b, 'reports/thesis/cyto/lnc.tf.gene.cis.node.csv',row.names = FALSE,quote = FALSE)
+
+#---------
+lnc.tf.gene.cis.s<-mutate(lnc.tf.gene.cis,lnc=pf.ensembl2symbol(lnc),gene=pf.ensembl2symbol(gene))
+sugid.s<-pf.ensembl2symbol(sugid)
+lnc.tf.gene.cis.sugid<-filter(lnc.tf.gene.cis.s, lnc%in%sugid.s|tf%in%sugid.s|gene%in%sugid.s)
+lnc.tf.gene.cis.sugid$tf<-as.vector(lnc.tf.gene.cis.sugid$tf)
+lnc.tf.gene.cis.sugid<-mutate(lnc.tf.gene.cis.sugid,lnc=ifelse(lnc%in%sugid.s,paste0(lnc,'*'),lnc),
+                          tf=ifelse(tf%in%sugid.s,paste0(tf,'*'),tf),
+                          gene=ifelse(gene%in%sugid.s,paste0(gene,'*'),gene))
+
+dim(lnc.tf.gene.cis.sugid)
+length(unique(as.vector(lnc.tf.gene.cis.sugid$lnc)))
+length(unique(as.vector(lnc.tf.gene.cis.sugid$tf)))
+length(unique(as.vector(lnc.tf.gene.cis.sugid$gene)))
+lnc.tf.gene.cis.sugid<-arrange(lnc.tf.gene.cis.sugid,tf,gene,lnc)
+write.csv(lnc.tf.gene.cis.sugid,file = './reports/thesis/lnc.tf.gene.cis.sugid.csv',row.names = FALSE)
+
+############
+a<-table(filter(tf2gene.gtrd,tf=='ESR1')$N)
+########################### lncRNA Trans
+lnc.trans.cor<-pf.get.lnc.trans.cor()
+head(lnctf.cor.indirect);dim(lnctf.cor.indirect)
+head(lnc.trans.cor);dim(lnc.trans.cor)
+head(tf2gene);dim(tf2gene)
+
+
+lnc.tf.gene.trans<-inner_join(lnc.trans.cor,lnctf.cor.indirect,by=c('v1'='v1'))%>%
+  select(lnc=v1,tf=v2.y,gene=v2.x)%>%
+  mutate(key=paste0(tf,gene))%>%
+  filter(key%in%paste0(tf2gene$tf,tf2gene$gene))%>%
+  select(lnc,tf,gene)
+saveRDS(lnc.tf.gene.trans,'support/lnc.tf.gene.trans.rds')
+
+dim(a<-distinct(lnc.tf.gene.trans,lnc,tf))
+length(unique(as.vector(a$lnc)))
+length(unique(as.vector(a$tf)))
+dim(lnc.tf.gene)
+
+filter(lnc.tf.gene.trans, tf=='MYC',lnc%in%c('ENSG00000225177','ENSG00000277383','ENSG00000270933','ENSG00000197989'))
+pf.ensembl2symbol('ENSG00000277383')
+pf.ensembl2symbol('ENSG00000270933')
+
+lnc.tf.gene.s<-mutate(lnc.tf.gene.trans,lnc=pf.ensembl2symbol(lnc),gene=pf.ensembl2symbol(gene))
+lnc.tf.gene.s.1<-lnc.tf.gene.s
+a<-data.frame(v1=c(as.vector(lnc.tf.gene.s.1$lnc),
+                   as.vector(lnc.tf.gene.s.1$tf)),
+              v2=c(as.vector(lnc.tf.gene.s.1$tf),
+                   as.vector(lnc.tf.gene.s.1$gene)),
+              key=c(rep('b',nrow(lnc.tf.gene.s.1)),rep('i',nrow(lnc.tf.gene.s.1))),
+              stringsAsFactors = FALSE)
+v1<-sort(table(a$v1))
+v2<-sort(table(a$v2))
+nodes<-unique(c(a$v1,a$v2))
+b<-data.frame(node=nodes,
+              type=ifelse(nodes%in%lncRNA$symbol,'lncRNA',
+                          ifelse(nodes%in%ac$ID,'tf','gene')),
+              color=ifelse(nodes%in%pf.ensembl2symbol(sugid),'surv',
+                           ifelse(nodes%in%lncRNA$symbol,'normal-lnc',
+                                  ifelse(nodes%in%ac$ID,'normal-tf','normal-gene'))),
+              stringsAsFactors=FALSE)
+write.csv(a, 'reports/thesis/cyto/lnc.tf.gene.trans.edge.csv',row.names = FALSE,quote=FALSE)
+write.csv(b, 'reports/thesis/cyto/lnc.tf.gene.trans.node.csv',row.names = FALSE,quote = FALSE)
+##################
+filter(lnc.tf.gene.s,tf=='MYC',lnc==pf.ensembl2symbol('ENSG00000225177'))
+sugid.s<-pf.ensembl2symbol(sugid)
+lnc.tf.gene.sugid<-filter(lnc.tf.gene.s, lnc%in%sugid.s|tf%in%sugid.s|gene%in%sugid.s)
+lnc.tf.gene.sugid$tf<-as.vector(lnc.tf.gene.sugid$tf)
+lnc.tf.gene.sugid<-mutate(lnc.tf.gene.sugid,lnc=ifelse(lnc%in%sugid.s,paste0(lnc,'*'),lnc),
+                          tf=ifelse(tf%in%sugid.s,paste0(tf,'*'),tf),
+                          gene=ifelse(gene%in%sugid.s,paste0(gene,'*'),gene))
+
+dim(lnc.tf.gene.sugid)
+length(unique(as.vector(lnc.tf.gene.sugid$lnc)))
+length(unique(as.vector(lnc.tf.gene.sugid$tf)))
+length(unique(as.vector(lnc.tf.gene.sugid$gene)))
+lnc.tf.gene.sugid<-arrange(lnc.tf.gene.sugid,tf,gene,lnc)
+write.csv(lnc.tf.gene.sugid,file = './reports/thesis/lnc.tf.gene.sugid.csv',row.names = FALSE)
+
+
+
+tfs<-sort(table(as.vector(lnc.tf.gene.sugid$tf)))
+tfs
+tfs.10<-names(tfs)[tfs>=15]
+lnc.tf.gene.sugid.f<-filter(lnc.tf.gene.sugid,tf%in%tfs.10)
+a<-data.frame(v1=c(as.vector(lnc.tf.gene.sugid.f$lnc),
+                   as.vector(lnc.tf.gene.sugid.f$tf)),
+              v2=c(as.vector(lnc.tf.gene.sugid.f$tf),
+                   as.vector(lnc.tf.gene.sugid.f$gene)),
+              key=c(rep('b',nrow(lnc.tf.gene.sugid.f)),rep('i',nrow(lnc.tf.gene.sugid.f))),
+              stringsAsFactors = FALSE)
+nodes<-unique(c(a$v1,a$v2))
+b<-data.frame(node=nodes,
+              type=ifelse(nodes%in%lncRNA$symbol,'lncRNA',
+                          ifelse(nodes%in%ac$ID,'tf','gene')),
+              color=ifelse(nodes%in%pf.ensembl2symbol(sugid),'surv',
+                           ifelse(nodes%in%lncRNA$symbol,'normal-lnc',
+                                  ifelse(nodes%in%ac$ID,'normal-tf','normal-gene'))),
+              stringsAsFactors=FALSE)
+write.csv(a, 'reports/thesis/cyto/lnc.tf.gene.surv.trans.edge.csv',row.names = FALSE,quote=FALSE)
+write.csv(b, 'reports/thesis/cyto/lnc.tf.gene.surv.trans.node.csv',row.names = FALSE,quote = FALSE)
+
+###############################
+##############################
 ##########################
-lnctfv2 <- filter(lnctfv2,v1%in%names(lncs0[lncs0<quantile(lncs0,0.9)]))
+lnctfv3 <- filter(lnctfv2,v1%in%names(lncs0[lncs0<quantile(lncs0,0.85)]))
 
 
 
@@ -156,7 +316,7 @@ dev.off()
 
 data <- data.frame(
   Protein=c('c-Myc','IgG'),
-  lncRNA=c('AC010331.1-201','AC010331.1-201','NR_033896','NR_033896','AC010719.1','AC010719.1'),
+  lncRNA=c('AC010331.1-201','AC010331.1-201','AL590617.2','AL590617.2','AC010719.1','AC010719.1'),
   mean=c(0.012,0.025,0.077,0.015,0.003,0.011),
   sd=c(0.00607,0.00764,0.00138,0.00312,0.0009,0.00098)
 )

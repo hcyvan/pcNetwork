@@ -72,46 +72,97 @@ coxph.2 <- function(gene,type=type){
 ############# Univariate
 #################################################
 #---------- dfs
-i<-0;total<-length(diff$GeneID)
-dfs.uni<-t(sapply(diff$GeneID, function(x){
-  i<<-i+1
-  print(paste0(i,'/',total))
-  coxph.2(x,'dfs')
-}))
-du<-data.frame(gene=rownames(dfs.uni),
-                    p=dfs.uni[,1],
-                    FDR=p.adjust(dfs.uni[,1],method = 'BH'),
-                    b=dfs.uni[,2],
-                    ph=exp(dfs.uni[,2]),
-                    ph.p=dfs.uni[,3],
-                    ph.FDR=p.adjust(dfs.uni[,3],method = 'BH'),
-                    stringsAsFactors = FALSE)%>%arrange(ph.FDR)
-saveRDS(du, file = './data/coxph.dfs.nui.rds')
+# i<-0;total<-length(diff$GeneID)
+# dfs.uni<-t(sapply(diff$GeneID, function(x){
+#   i<<-i+1
+#   print(paste0(i,'/',total))
+#   coxph.2(x,'dfs')
+# }))
+# du<-data.frame(gene=rownames(dfs.uni),
+#                     p=dfs.uni[,1],
+#                     FDR=p.adjust(dfs.uni[,1],method = 'BH'),
+#                     b=dfs.uni[,2],
+#                     ph=exp(dfs.uni[,2]),
+#                     ph.p=dfs.uni[,3],
+#                     ph.FDR=p.adjust(dfs.uni[,3],method = 'BH'),
+#                     stringsAsFactors = FALSE)%>%arrange(ph.FDR)
+# saveRDS(du, file = './data/coxph.dfs.nui.rds')
 #---------- os
-i<-0;total<-length(diff$GeneID)
-os.uni<-t(sapply(diff$GeneID, function(x){
-  i<<-i+1
-  print(paste0(i,'/',total))
-  coxph.2(x,'os')
-}))
-ou<-data.frame(gene=rownames(os.uni),
-               p=os.uni[,1],
-               FDR=p.adjust(os.uni[,1],method = 'BH'),
-               b=os.uni[,2],
-               ph=exp(os.uni[,2]),
-               ph.p=os.uni[,3],
-               ph.FDR=p.adjust(os.uni[,3],method = 'BH'),
-               stringsAsFactors = FALSE)%>%arrange(ph.FDR)
-saveRDS(ou, file = './data/coxph.os.nui.rds')
+# i<-0;total<-length(diff$GeneID)
+# os.uni<-t(sapply(diff$GeneID, function(x){
+#   i<<-i+1
+#   print(paste0(i,'/',total))
+#   coxph.2(x,'os')
+# }))
+# ou<-data.frame(gene=rownames(os.uni),
+#                p=os.uni[,1],
+#                FDR=p.adjust(os.uni[,1],method = 'BH'),
+#                b=os.uni[,2],
+#                ph=exp(os.uni[,2]),
+#                ph.p=os.uni[,3],
+#                ph.FDR=p.adjust(os.uni[,3],method = 'BH'),
+#                stringsAsFactors = FALSE)%>%arrange(ph.FDR)
+# saveRDS(ou, file = './data/coxph.os.nui.rds')
 # --------------------------------
 du<-readRDS(file = './data/coxph.dfs.nui.rds')
 ou<-readRDS(file = './data/coxph.os.nui.rds')
-dug<-filter(du, FDR<0.01,ph.FDR<0.01)
-oug<-filter(ou, p<0.01,ph.p<0.01)
+dug<-filter(du, FDR<0.01,ph.FDR<0.01)%>%arrange(ph.FDR)
+oug<-filter(ou, p<0.01,ph.p<0.01)%>%arrange(ph.FDR)
 saveRDS(dug, file = './data/coxph.dfs.nui.dug.rds')
 saveRDS(oug, file = './data/coxph.os.nui.oug.rds')
-# -------------------------thesis
-
+########################################
+############################# thesis
+#######################################
+#---------------------- pic
+gene<-'ENSG00000087116'
+type<-'os'
+draw <- function(gene,type) {
+  sym<-pf.ensembl2symbol(gene)
+  if (is.na(sym)) {
+    sym<-gene
+  }
+  cat(paste('drawing ',type,' ',gene,'\n'))
+  data<-get.surv.data(gene,type)
+  m<-median(data[[gene]])
+  g<-as.vector(ifelse(data[[gene]]>=m,'high','low'))
+  data<-mutate(data,group=g)
+  fit <- survfit(Surv(time, status) ~ group, data=data)
+  pval<-round(surv_pvalue(fit,data)$pval,4)
+  if(pval>0.05){
+    return()
+  }
+  p<-ggsurvplot(fit,
+                data,
+                # surv.median.line = "v", # Add medians survival
+                # Change legends: title & labels
+                legend = "none",
+                # legend.labs = c("high", "low"),
+                pval = TRUE,
+                pval.size = 15,
+                # Change censor
+                censor.shape = 124,
+                censor.size = 2,
+                conf.int = FALSE,
+                # break.x.by = 500,
+                # Add risk table
+                # risk.table = TRUE,
+                palette = c("red", "blue"),
+                ggtheme = theme_classic(),
+                xlab=sym,
+                ylab='',
+                font.x = c(50),font.y = c(31),
+                font.tickslab = c(31, "plain", "darkgreen")
+  )
+  ggsave(p$plot, file=paste0('reports/thesis/surv/',type,'/',pval,'.',sym,'.',type,'.pdf'), width = 10, height = 8)
+}
+draw(gene,type)
+for(i in oug$gene) {
+  draw(i,'os')
+}
+for(i in dug$gene) {
+  draw(i,'dfs')
+}
+#---------------------- table
 dug.thesis <- data.frame(ID=dug$gene,
                         Symobl=pf.ensembl2symbol(dug$gene),
                          HR=round(dug$ph,2),

@@ -66,16 +66,97 @@ tf2gene2<-do.call(rbind,lapply(split(tf2gene, as.vector(tf2gene$tf)),function(x)
 
 exp<-as.data.table(readRDS('./data/beachip.rds')$value)
 ########################################## AR target
+#-----------Gene
+tfs1.gene <- tf2gene2[tf=='AR']$symbol
+length(tfs1.gene) #5083
+level1.gene<-tf2gene2[tf=='AR'&symbol%in%tfs1.gene]
+trs1gene<- TRS(level1.gene,exp=exp,cutoff = 2) # 60
+dim(trs1gene)
+lapply(dge, function(x){
+  length(intersect(trs1gene$target,x))
+})
+#-----------TF
 tfs1 <- tf2gene2[tf=='AR'&symbol%in%unique(tf2gene2$tf)]$symbol
 tfs1 #276
 level1<-tf2gene2[tf=='AR'&symbol%in%tfs1]
 
 trs1<- TRS(level1,exp=exp,cutoff = 2) # 60
+trs1.export<-data.frame(TF=trs1$target,TRS=round(trs1$trs,2))%>%arrange(desc(abs(TRS)))
+write.csv(trs1.export,'reports/thesis/trs1.export.csv',row.names = FALSE)
 ######################################### AR-target target
 level2<-tf2gene2[tf%in%unique(trs1$target)]
-trs2<- TRS(level2,exp=exp,cutoff = 2) # 281512
-
-saveRDS(trs2, './data/trs2.rds')
+# trs2<- TRS(level2,exp=exp,cutoff = 2) # 281512
+# 
+# saveRDS(trs2, './data/trs2.rds')
 trs2 <- readRDS('./data/trs2.rds')
+diff.ar<-pf.get.diff.ar()
+early<-diff.ar$early
+late<-diff.ar$late
+inter<-diff.ar$inter
+early.only<-setdiff(early,inter)
+late.only<-setdiff(late,inter)
+length(early.only)
+length(late.only)
+dim(filter(trs2,target%in%early.only))
+dim(filter(trs2,target%in%late.only))
+#---------------Gene
+trs2gene<-unique(as.vector(trs2$target))
+lapply(dge, function(x){
+  length(intersect(trs2gene,x))
+})
+lapply(dge, function(x){
+  length(x)
+})
 
+#-------------plot
+AR1<-sapply(dge, function(x){
+  length(intersect(trs1gene$target,x))
+})[-1]
+AR2<-sapply(dge, function(x){
+  length(intersect(trs2gene,x))
+})[-1]
+all<-sapply(dge, function(x){
+  length(x)
+})[-1]
+labels<-c('20min', '40min', '1h', '2h', '4h', '8h', '16h', '24h', '48h')
+time.labels=factor(labels, levels=labels)
+df.ar1<-data.frame(group='AR',time=time.labels,data=AR1)
+df.ar2<-data.frame(group='Secondary',time=time.labels,data=AR2)
+df.all<-data.frame(group='ALL',time=time.labels,data=all)
+df <- rbind(df.ar1,df.ar2,df.all)
+ggplot(data=df, aes(x=time, y=data, group=group)) +
+  geom_line(aes(linetype=group))+
+  geom_point(aes(shape=group))+
+  labs(x=NULL,y='Differential gene number')+
+  theme_classic(base_size = 20)+scale_color_grey()
 
+###############################3
+trs2.early.only<-filter(trs2,target%in%early.only)
+trs2.early.n<-sapply(split(trs2.early.only,as.vector(trs2.early.only$tf)),function(x){nrow(x)})
+trs2.late.only<-filter(trs2,target%in%late.only)
+trs2.late.n<-sapply(split(trs2.late.only,as.vector(trs2.late.only$tf)),function(x){nrow(x)})
+mean(trs2.late.n)
+mean(trs2.early.n)
+t.test(trs2.early.n,trs2.late.n)
+
+tf2<-as.vector(trs1.export$TF)
+tf2.early<-trs2.early.n[match(tf2,names(trs2.early.n))]
+tf2.late<-trs2.late.n[match(tf2,names(trs2.late.n))]
+tf2.early[is.na(tf2.early)]<-0
+tf2.late[is.na(tf2.late)]<-0
+tf.el<-data.frame(TF=tf2,Early=tf2.early,Late=tf2.late)
+write.csv(tf.el,'reports/thesis/ar.tf2.early.late.csv',row.names = FALSE)
+#############################
+trs2.early.only<-filter(trs2,target%in%early.only)
+
+a<-rbind(data.frame(tf=trs1$tf,target=trs1$target,level='1'),
+         data.frame(tf=trs2.early.only$tf,target=trs2.early.only$target,level='2'))
+nodes<-unique(c(as.vector(trs1$target),as.vector(trs2.early.only$tf)))
+b<-data.frame(node=nodes,
+              type='tf',
+              stringsAsFactors=TRUE)
+b<-rbind(b,data.frame(node='AR',type='tf1'))
+write.csv(a, 'reports/thesis/cyto/ar.early.edge.csv',row.names = FALSE,quote=FALSE)
+write.csv(b, 'reports/thesis/cyto/ar.early.node.csv',row.names = FALSE,quote = FALSE)
+
+sort(sapply(split(a,as.vector(a$tf)),function(x){nrow(x)}),decreasing=TRUE)

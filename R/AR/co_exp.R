@@ -1,5 +1,6 @@
 library(pcProfile)
 library(affy)
+library(dply)
 # library(affyQCReport)
 # library(simpleaffy)
 # library(affyPLM)
@@ -7,6 +8,7 @@ library(annotate)
 library(hgu95c.db)
 library(hgu95b.db)
 library(hgu95av2.db)
+source('R/lib.R')
 
 
 # idir <- './data/AR/AR-chip/GSE6606_Primary'
@@ -176,7 +178,7 @@ filter(corM,FDR<0.05,abs(r)>0.7)%>%filter(v1=='AR'|v2=='AR')
 finalP<-filter(corP1,FDR<0.05,abs(r)>0.7)
 finalM<-filter(corM1,FDR<0.05,abs(r)>0.7)
 
-
+tfs <- unique(c(as.vector(real$tf)))
 a<-sort(sapply(tfs, function(x){
   nrow(filter(finalP,v1==x|v2==x))
 }), decreasing=TRUE)
@@ -184,7 +186,7 @@ b<-sort(sapply(tfs, function(x){
   nrow(filter(finalM,v1==x|v2==x))
 }),decreasing = TRUE)
 
-node.tfs<-names(a)[1:8]
+node.tfs<-names(a)
 cytoP<-rbind(filter(finalP,v1%in%node.tfs),filter(finalP,v2%in%node.tfs))
 write.csv(cytoP, './reports/thesis/cytoP.edge.csv',row.names = FALSE,quote = FALSE)
 node.attr1<- data.frame(node=node.tfs,attr='tf')
@@ -193,7 +195,7 @@ node.attr<-rbind(node.attr1,node.attr2)
 write.csv(node.attr, './reports/thesis/cytoP.node.csv',row.names = FALSE,quote = FALSE)
 
 
-node.tfs<-names(b)[1:8]
+node.tfs<-names(b)
 cytoM<-rbind(filter(finalM,v1%in%node.tfs),filter(finalM,v2%in%node.tfs))
 write.csv(cytoM, './reports/thesis/cytoM.edge.csv',row.names = FALSE,quote = FALSE)
 node.attr1<- data.frame(node=node.tfs,attr='tf')
@@ -209,14 +211,11 @@ sum(b!=0)
 dim(filter(finalM,v1%in%tfs|v2%in%tfs))
 dim(filter(finalM,v1%in%tfs|v2%in%tfs, r>0))
 dim(filter(finalM,v1%in%tfs|v2%in%tfs, r<0))
-
-
-
-sort(table(trs2$tf),decreasing = TRUE)
-###############################################################
-co<-as.vector(filter(finalM,v1=='IRF1')$v2)
-bi <-as.vector(filter(trs2,tf=='IRF1')$target)
-intersect(co,bi)
-
-
-#############################################################3
+##############################################333
+tf.p<-a[a!=0]
+tf.m<-b[b!=0]
+tf.names<-sort(unique(c(names(tf.p),names(tf.m))))
+tf.export<-data.frame(TF=tf.names,
+           Primary=as.numeric(tf.names%in%names(tf.p)),
+           Metastatic=as.numeric(tf.names%in%names(tf.m)))
+write.csv(tf.export,'reports/thesis/metastatic_pramary_tf.csv',row.names = FALSE)
