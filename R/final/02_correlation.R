@@ -5,6 +5,4 @@ diff.gene <- pf.get.diff(c('lncRNA','pcg'))
 
 genes.zfpkm <- pf.filter.zfpkm(diff.gene$GeneID)
 cor.pairs <- multicor(genes.zfpkm, rds = './data/cor.pearson.lncRNA.pcg.5343.zfpkm.pairs.rds')
-
-
-
+cor.pairs2 <- multicor(genes.zfpkm, rds = './data/cor.pearson.lncRNA.pcg.5343.zfpkm.pairs.v2.rds')

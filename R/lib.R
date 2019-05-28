@@ -1,6 +1,11 @@
 library(stringr)
 library(dplyr)
 library(pcProfile)
+library(ggpubr)
+library(cowplot)
+library(survival)
+library(survminer)
+
 
 
 pv.lncRNA <- c('lincRNA',
@@ -299,13 +304,9 @@ pf.multicor <- function(m1, m2=NULL, method= c('pearson', 'kendall', 'spearman')
     j<-0
     apply(data2,2,function(y){
       j<<-j+1
-      if (!is.null(data2)|i > j) {
-        test <- cor.test(x,y,method = method)
-        r[j,i] <<- test$estimate
-        test$p.value
-      } else {
-        NaN
-      }
+      test <- cor.test(x,y,method = method)
+      r[j,i] <<- test$estimate
+      test$p.value
     })
   })
   dimnames(r) <- dimnames(p)
@@ -322,7 +323,12 @@ pf.multicor <- function(m1, m2=NULL, method= c('pearson', 'kendall', 'spearman')
 pf.get.ac<-function(){
   readRDS('data/tf.ac.rds')
 }
-
+pf.get.du <- function(){
+  readRDS(file = './data/coxph.dfs.nui.rds')
+}
+pf.get.ou <- function(){
+  readRDS(file = './data/coxph.os.nui.rds')
+}
 pf.get.dug<-function(){
   readRDS('./data/coxph.dfs.nui.dug.rds')
 }
@@ -375,5 +381,120 @@ pf.get.loc<-function(){
   readRDS('./cache/cell.location.rds')
 }
 
+pf.get.ARAlincRNA<-function(){
+  ARAlincRNA38En<-readRDS('cache/ARAlincRNA38En2.rds')
+  ARAlincRNA38En.filter<-filter(ARAlincRNA38En,gene_biotype%in%pv.lncRNA)
+  unique(do.call(c,ARAlincRNA38En.filter$ensembl_gene_id))
+}
 
+pf.get.clinical.overall <- function(){
+  .pf.cache('.clinical.overall', func = function(){
+    readRDS('./support/clinical.overall.rds')
+  })
+}
 
+pf.get.clinical.df <- function(){
+  .pf.cache('.clinical.df', func = function(){
+    readRDS('./support/clinical.disesefree.rds')
+  })
+}
+
+pf.get.surv.data<-function(gene,type='os'){
+  if (type=='os') {
+    surv<-pf.get.clinical.overall()
+  }else if(type=='dfs'){
+    surv<-pf.get.clinical.df()
+  }else {
+    stop()
+  }
+  data<-pf.filter.zfpkm(gene)
+  if (length(gene)==1) {
+    gzfpkm<-data.frame(data)
+    cases<-names(data)
+  } else {
+    gzfpkm <- data.frame(t(data))
+    cases<-rownames(t(data))
+  }
+  colnames(gzfpkm)<-gene
+  case.1<-as.vector(sapply(str_split(cases,'\\.'),function(x){paste(x[1:3], collapse = '-')}))
+  case.2<-as.vector(sapply(str_split(cases,'\\.'),function(x){x[4]}))
+  gzfpkm.2<-mutate(gzfpkm,case=case.1, flag=case.2)%>%
+    filter(!grepl('11A|11B',flag))%>%dplyr::select(-flag)
+  right_join(surv,gzfpkm.2,by=c('case'='case'))
+}
+
+pf.plot.survival <- function(gene, type=c('os','dfs'), dir=NULL, file.type=NULL, p.cutoff=NULL) {
+  type=match.arg(type)
+  cat(paste('drawing ',type,' ',gene,'\n'))
+  symbol<-pf.ensembl2symbol(gene)
+  if (is.na(symbol)) {
+    symbol<-gene
+  }
+  data<-pf.get.surv.data(gene,type)
+  m<-median(data[[gene]])
+  g<-as.vector(ifelse(data[[gene]]>=m,'high','low'))
+  data<-mutate(data,group=g)
+  fit <- survfit(Surv(time, status) ~ group, data=data)
+  pval<-round(surv_pvalue(fit,data)$pval,4)
+  if(!is.null(p.cutoff) && pval>p.cutoff){
+    return()
+  }
+  p<-ggsurvplot(fit,
+                data,
+                # surv.median.line = "v", # Add medians survival
+                # Change legends: title & labels
+                legend = "none",
+                # legend.labs = c("high", "low"),
+                pval = TRUE,
+                pval.size = 15,
+                # Change censor
+                censor.shape = 124,
+                censor.size = 2,
+                conf.int = FALSE,
+                # break.x.by = 500,
+                # Add risk table
+                # risk.table = TRUE,
+                palette = c("red", "blue"),
+                ggtheme = theme_classic(),
+                xlab=symbol,
+                ylab='',
+                font.x = c(50),font.y = c(31),
+                font.tickslab = c(31, "plain", "darkgreen")
+  )
+  
+  if(is.null(file.type)) {
+    p
+  } else {
+    if(is.null(dir)) {
+      dir='./'
+    }
+    ggsave(p$plot, file=file.path(dir,paste0(type,'_',pval,'_',symbol,'.',file.type)), width = 10, height = 8)
+  }
+}
+
+pf.plot.diff<-function(gene, dir=NULL, file.type=NULL){
+  data=pf.filter.zfpkm(gene)
+  data<-data.frame(value=data, group=c(rep('Tumor',499),rep('Normal',52)))
+  p<-ggboxplot(data,x = "group", y = "value",order=c('Normal','Tumor'),
+               ylab = 'zFPKM', xlab = '',
+               color = "group",shape = "group",palette =c("#00AFBB","#FC4E07"),
+               add = "jitter", add.params = list(fill = "white"),ggtheme = theme_pubr())+
+    theme(axis.text=element_text(size=rel(1.2)),
+          axis.text.x = element_text(size=rel(0),angle = 45),
+          legend.text= element_text(size=rel(1)),
+          legend.title=element_blank(),
+          axis.title=element_text(size=rel(1.2)))+
+    stat_compare_means(comparisons = list(c('Normal','Tumor')),label = "p.signif")
+  if(is.null(file.type)) {
+    p
+  } else {
+    symbol<-pf.ensembl2symbol(gene)
+    if (is.na(symbol)) {
+      symbol<-gene
+    }
+    if(is.null(dir)) {
+      dir='./'
+    }
+    ggsave(p, file=file.path(dir,paste0(symbol,'.',file.type)), width = 10, height = 8)
+  }
+}

@@ -6,62 +6,11 @@ library(survival)
 library(survminer)
 
 source('./R/lib.R')
-#################### clinical data
-clinical1.raw <- read.delim('./data/tcga-prad/nationwidechildrens.org_clinical_patient_prad.txt', stringsAsFactors=FALSE)[-c(1,2),]
-clin.df <- dplyr::select(clinical1.raw,
-                   case=bcr_patient_barcode,
-                   gleason=gleason_score,
-                   new_tumor=days_to_biochemical_recurrence_first,
-                   #new_tumor=new_tumor_event_dx_indicator,
-                   last=last_contact_days_to)%>%
-    mutate(new_tumor=suppressWarnings(as.numeric(new_tumor)),
-           last=suppressWarnings(as.numeric(last)))
-df<-data.frame(case=as.vector(clin.df$case),
-               time=ifelse(is.na(clin.df$new_tumor), clin.df$last,clin.df$new_tumor),
-               status=ifelse(is.na(clin.df$new_tumor), 1,2),
-               stringsAsFactors = FALSE)
-
-clinical2.raw <- read.delim('./data/tcga-prad/clinical/clinical.tsv', stringsAsFactors=FALSE)
-clin.o <- dplyr::select(clinical2.raw,
-                    case=submitter_id,
-                    death=days_to_death,
-                    last=days_to_last_follow_up)%>%
-    mutate(death=suppressWarnings(as.numeric(death)),
-           last=suppressWarnings(as.numeric(last)))
-
-overall<-data.frame(case=as.vector(clin.o$case),
-               time=ifelse(is.na(clin.o$death), clin.o$last,clin.o$death),
-               status=ifelse(is.na(clin.o$death), 1,2),
-               stringsAsFactors = FALSE)
 #################################
 diff<-pf.get.diff()
 
-get.surv.data<-function(gene,type='os'){
-  if (type=='os') {
-    surv<-overall
-  }else if(type=='dfs'){
-    surv<-df
-  }else {
-    stop()
-  }
-  data<-pf.filter.zfpkm(gene)
-  if (length(gene)==1) {
-    gzfpkm<-data.frame(data)
-    cases<-names(data)
-  } else {
-    gzfpkm <- data.frame(t(data))
-    cases<-rownames(t(data))
-  }
-  colnames(gzfpkm)<-gene
-  case.1<-as.vector(sapply(str_split(cases,'\\.'),function(x){paste(x[1:3], collapse = '-')}))
-  case.2<-as.vector(sapply(str_split(cases,'\\.'),function(x){x[4]}))
-  gzfpkm.2<-mutate(gzfpkm,case=case.1, flag=case.2)%>%
-    filter(!grepl('11A|11B',flag))%>%dplyr::select(-flag)
-  right_join(surv,gzfpkm.2,by=c('case'='case'))
-}
-
 coxph.2 <- function(gene,type=type){
-  surv.data<-get.surv.data(gene,type=type)%>%dplyr::select(-case)
+  surv.data<-pf.get.surv.data(gene,type=type)%>%dplyr::select(-case)
   model<-summary(coxph(Surv(time, status) ~ ., data=surv.data))
   ret <- c(model$logtest[3],as.vector(model$coefficients[,c(1,5)]))
   names(ret) <- NULL
@@ -114,53 +63,11 @@ saveRDS(oug, file = './data/coxph.os.nui.oug.rds')
 ############################# thesis
 #######################################
 #---------------------- pic
-gene<-'ENSG00000087116'
-type<-'os'
-draw <- function(gene,type) {
-  sym<-pf.ensembl2symbol(gene)
-  if (is.na(sym)) {
-    sym<-gene
-  }
-  cat(paste('drawing ',type,' ',gene,'\n'))
-  data<-get.surv.data(gene,type)
-  m<-median(data[[gene]])
-  g<-as.vector(ifelse(data[[gene]]>=m,'high','low'))
-  data<-mutate(data,group=g)
-  fit <- survfit(Surv(time, status) ~ group, data=data)
-  pval<-round(surv_pvalue(fit,data)$pval,4)
-  if(pval>0.05){
-    return()
-  }
-  p<-ggsurvplot(fit,
-                data,
-                # surv.median.line = "v", # Add medians survival
-                # Change legends: title & labels
-                legend = "none",
-                # legend.labs = c("high", "low"),
-                pval = TRUE,
-                pval.size = 15,
-                # Change censor
-                censor.shape = 124,
-                censor.size = 2,
-                conf.int = FALSE,
-                # break.x.by = 500,
-                # Add risk table
-                # risk.table = TRUE,
-                palette = c("red", "blue"),
-                ggtheme = theme_classic(),
-                xlab=sym,
-                ylab='',
-                font.x = c(50),font.y = c(31),
-                font.tickslab = c(31, "plain", "darkgreen")
-  )
-  ggsave(p$plot, file=paste0('reports/thesis/surv/',type,'/',pval,'.',sym,'.',type,'.pdf'), width = 10, height = 8)
-}
-draw(gene,type)
 for(i in oug$gene) {
-  draw(i,'os')
+  pf.plot.survival(gene,tyep='os', dir='reports/thesis/surv/os/',file.type = 'pdf')
 }
 for(i in dug$gene) {
-  draw(i,'dfs')
+  pf.plot.survival(gene,type='dfs', dir='reports/thesis/surv/os/',file.type = 'pdf')
 }
 #---------------------- table
 dug.thesis <- data.frame(ID=dug$gene,
@@ -214,7 +121,6 @@ dim(filter(dug.a, type%in%pv.pcg))
 table(data.frame(dug.a$HR>1))
 table(data.frame(dug.a$logFC>0))
 table(data.frame(dug.a$HR>1, dug.a$logFC>0))
-
 #################################################
 ############# Multivariate
 #################################################
