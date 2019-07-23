@@ -7,9 +7,9 @@ listDatasets(ensembl)
 ensembl <- useDataset("hsapiens_gene_ensembl",mart=ensembl)
 listFilters(ensembl)
 listAttributes(ensembl)->a
-searchAttributes(mart = ensembl, pattern = "GO")[,c(1,2)]
+searchAttributes(mart = ensembl, pattern = "strand")[,c(1,2)]
 
-biomart <- getBM(attributes = c('ensembl_gene_id', 'ensembl_transcript_id', 'entrezgene', 'hgnc_symbol','external_gene_name', 'gene_biotype', 'start_position', 'end_position', 'transcript_start','transcript_end','transcription_start_site','chromosome_name','go_id','name_1006','definition_1006'),mart = ensembl)
+biomart <- getBM(attributes = c('ensembl_gene_id', 'ensembl_transcript_id', 'entrezgene', 'hgnc_symbol','external_gene_name', 'gene_biotype', 'start_position', 'end_position', 'strand','transcript_start','transcript_end','transcription_start_site','chromosome_name','go_id','name_1006','definition_1006'),mart = ensembl)
 
 saveRDS(biomart, file='./support/biomart.rds')
 biomart<-readRDS('./support/biomart.rds')

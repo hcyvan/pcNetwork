@@ -61,3 +61,18 @@ for(tf_name in unique(tf2gene.gtrd$tf)){
   write.csv(res,file = file.path('data/190422/tf_chip_seq/',paste0(tf_name,'.csv')),row.names = FALSE)
   i<-i+1
 }
+################ WangDan
+primers<-read.csv('data/wangdan/20190722.csv',stringsAsFactors = FALSE)
+genes<-pf.symbol2emsembl(primers$symbol)
+
+for(gene in genes) {
+  pf.plot.survival(gene,type='os',dir='data/wangdan/surv/os/',file.type = 'png')
+  pf.plot.survival(gene,type='dfs',dir='data/wangdan/surv/dfs/',file.type = 'png')
+  pf.plot.diff(gene,dir='data/wangdan/surv/diff/', file.type = 'png')
+}
+
+for(gene in pf.symbol2emsembl(c('AR','YBX1'))) {
+  pf.plot.survival(gene,type='os',dir='data/wangdan/surv/os/',file.type = 'png')
+  pf.plot.survival(gene,type='dfs',dir='data/wangdan/surv/dfs/',file.type = 'png')
+  pf.plot.diff(gene,dir='data/wangdan/surv/diff/', file.type = 'png')
+}

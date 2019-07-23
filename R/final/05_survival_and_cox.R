@@ -71,6 +71,24 @@ for(i in dug$gene) {
 }
 #---------------------- table
 dug.thesis <- data.frame(ID=dug$gene,
+                         Symobl=pf.ensembl2symbol(dug$gene),
+                         HR=round(dug$ph,2),
+                         FDR=dug$ph.FDR,
+                         logFC=round(diff[match(dug$gene,diff$GeneID),'logFC'],2),
+                         stringsAsFactors = FALSE)%>%arrange(desc(HR))
+write.csv(dug.thesis, './reports/thesis/DisseseFreeSurvival.csv',row.names = FALSE)
+
+oug.thesis <- data.frame(ID=oug$gene,
+                         Symobl=pf.ensembl2symbol(oug$gene),
+                         HR=round(oug$ph,2),
+                         FDR=oug$ph.FDR,
+                         logFC=round(diff[match(oug$gene,diff$GeneID),'logFC'],2),
+                         stringsAsFactors = FALSE)%>%arrange(desc(HR))
+write.csv(oug.thesis, './reports/thesis/OverallSurvival.csv',row.names = FALSE)
+
+
+#----------------
+dug.thesis <- data.frame(ID=dug$gene,
                         Symobl=pf.ensembl2symbol(dug$gene),
                          HR=round(dug$ph,2),
                          logFC=round(diff[match(dug$gene,diff$GeneID),'logFC'],2),

@@ -344,7 +344,7 @@ pf.get.lnc.cis<-function(up=1000,uniq=TRUE){
   lnc.gene.raw<-readRDS('support/lnc.cis.origin.rds')
   lnc.gene<-data.frame(lncRNA=as.vector(lnc.gene.raw$lncRNA),
                        gene=as.vector(lnc.gene.raw$gene),
-                       dist=lnc.gene$dist,
+                       dist=lnc.gene.raw$dist,
                        stringsAsFactors = FALSE)
   lnc.gene<-filter(lnc.gene,dist<=up)
   lnc.cis<-filter(lnc.gene,lncRNA!=gene)
